@@ -1,0 +1,33 @@
+cff-version: 1.2.0
+message: "If you refer to this proof of concept, please cite it as below, and cite the original paper it replicates."
+title: "Channel Decomposition of Political Ads: a proof of concept"
+type: software
+authors:
+  - family-names: Rej
+    given-names: Aleksander
+    affiliation: "University of Warsaw"
+date-released: 2026-09-25
+version: "2"
+license: MIT
+url: "https://arejgh.github.io/channel-decomposition-poc/"
+repository-code: "https://github.com/ARejGH/channel-decomposition-poc"
+abstract: >-
+  Independent student proof of concept: a mini-replication of selected measurement steps of
+  Ciccarone (2026) on 22 political ads, extended with an omni embedder and an exact three-player
+  Shapley decomposition of image, prosody and text channels. Built with an agentic AI workflow in
+  zen-system, the author's agent harness (models used in the replication: Claude Fable 5.1, GPT-6 Astra);
+  not peer-reviewed; not affiliated with or endorsed by the original author.
+keywords:
+  - political advertising
+  - multimodal embeddings
+  - replication
+  - agentic AI
+references:
+  - type: article
+    title: "An Image is Worth 1000 Words? Partisanship and Attention in Videos"
+    authors:
+      - family-names: Ciccarone
+        given-names: Andrea
+    year: 2026
+    notes: "Working paper, version of 16 June 2026"
+    url: "https://andreaciccarone.github.io/Video_Partisanship_draft.pdf"

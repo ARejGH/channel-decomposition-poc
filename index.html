@@ -1,0 +1,1585 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta name="robots" content="noindex, nofollow">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Channel Decomposition of Political Ads</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,600&amp;family=Source+Sans+3:wght@400;600&amp;family=IBM+Plex+Mono:wght@400;500&amp;display=swap">
+<style>
+/* Tokens. Every colour used below is declared here (zws antipattern: mid-render-token-improvisation).
+   Neutrals carry a slight blue bias; no pure white or black base; one corner radius for the whole page
+   (zws wiki: promien-naroznika-nalezy-do-systemu). */
+:root{
+  color-scheme:light;
+  --ground:#F3F5F8;--surface:#FBFCFD;--ink:#171C22;--muted:#5B6572;--rule:#D8DEE5;--tint:#E9EEF3;
+  --accent:#0E6B66;--accent-ink:#0B4F4B;--accent-tint:#E1F0EE;--accent-2:#3E8F8A;
+  --solid:#1E6B47;--solid-tint:#E3F1E9;--heur:#9A6B12;--heur-tint:#FAF0D9;--subst:#6A3FBF;--subst-tint:#EDE6F9;
+  --chv:#0E6B66;--chp:#B8791A;--cht:#5A6B9E;
+  --rep:#B23B3B;--dem:#2F5FA8;--chance:#8B95A0;
+  --k-navy:#0E6B66;--k-ease:cubic-bezier(.2,.7,.2,1);--k-grad:linear-gradient(180deg,#0E6B66,#3E8F8A);
+  --radius:3px;
+  --serif:"Source Serif 4",Georgia,"Times New Roman",serif;
+  --sans:"Source Sans 3","Segoe UI",system-ui,-apple-system,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --ground:#0F1418;--surface:#161C22;--ink:#E7ECF0;--muted:#9AA6B2;--rule:#2A333C;--tint:#1C242C;
+    --accent:#4FB3AC;--accent-ink:#8ED3CD;--accent-tint:#153431;--accent-2:#2F7F79;
+    --solid:#5FC08F;--solid-tint:#15302A;--heur:#E0B25A;--heur-tint:#3A2E14;--subst:#B49AF0;--subst-tint:#2B2244;
+    --chv:#4FB3AC;--chp:#E0B25A;--cht:#9FB0E0;
+    --rep:#E27272;--dem:#7FA6E8;--chance:#6E7A86;
+    --k-navy:#4FB3AC;--k-grad:linear-gradient(180deg,#4FB3AC,#2F7F79);
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --ground:#0F1418;--surface:#161C22;--ink:#E7ECF0;--muted:#9AA6B2;--rule:#2A333C;--tint:#1C242C;
+  --accent:#4FB3AC;--accent-ink:#8ED3CD;--accent-tint:#153431;--accent-2:#2F7F79;
+  --solid:#5FC08F;--solid-tint:#15302A;--heur:#E0B25A;--heur-tint:#3A2E14;--subst:#B49AF0;--subst-tint:#2B2244;
+  --chv:#4FB3AC;--chp:#E0B25A;--cht:#9FB0E0;
+  --rep:#E27272;--dem:#7FA6E8;--chance:#6E7A86;
+  --k-navy:#4FB3AC;--k-grad:linear-gradient(180deg,#4FB3AC,#2F7F79);
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--ground);color:var(--ink);font-family:var(--sans);font-size:17px;line-height:1.55;padding-inline:16px}
+a{color:var(--accent-ink);text-decoration-thickness:1px;text-underline-offset:3px}
+a:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.wrap{max-width:1180px;margin:0 auto;padding-block:36px 64px}
+header.top{border-bottom:1px solid var(--rule);padding-bottom:20px;margin-bottom:22px}
+h1{font-family:var(--serif);font-weight:600;font-size:clamp(30px,4vw,42px);line-height:1.1;margin:0 0 10px;text-wrap:balance}
+.sub{max-width:74ch;margin:0;font-size:18px}
+.byline{margin-top:10px;font-size:15px;color:var(--muted);max-width:74ch}
+.layout{display:grid;grid-template-columns:224px minmax(0,1fr);gap:40px}
+nav.toc{position:sticky;top:env(safe-area-inset-top,0px);align-self:start;padding-top:6px}
+nav.toc ol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px}
+nav.toc a{display:block;padding:6px 10px;border-inline-start:2px solid var(--rule);color:var(--muted);text-decoration:none;font-size:14.5px;line-height:1.3;border-radius:0 var(--radius) var(--radius) 0}
+nav.toc a.current{border-inline-start-color:var(--accent);color:var(--ink);background:var(--accent-tint);font-weight:600} /* zws NA-002: edge plus weight, not colour alone */
+nav.toc .n{font-family:var(--mono);font-size:11.5px;margin-right:6px;color:var(--muted)}
+main{min-width:0}
+section{padding-block:6px 26px;border-bottom:1px solid var(--rule)}
+section:last-of-type{border-bottom:0}
+/* Type scale: 42 / 27 / 19.5 / 17 / 15 / 12 (zws antipattern: flat-type-hierarchy) */
+h2{font-family:var(--serif);font-weight:600;font-size:27px;line-height:1.2;margin:18px 0 12px;text-wrap:balance}
+h3{font-family:var(--serif);font-weight:600;font-size:19.5px;margin:20px 0 8px;text-wrap:balance} /* zws TY-012 */
+p,li{max-width:36em} /* zws TY-004: measure of about 60-66 characters */
+.kback{display:none;font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);text-decoration:none;margin-left:12px;vertical-align:middle;border-bottom:1px solid transparent} /* zws NA-005, narrow screens only */
+.kback:hover{color:var(--accent-ink);border-bottom-color:var(--accent)}
+p{margin:0 0 12px}
+ul,ol{padding-left:22px;margin:0 0 12px}
+li{margin-bottom:6px}
+.tag{display:inline-block;font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:var(--radius);vertical-align:middle;margin-right:6px;white-space:nowrap}
+.tag.solid{color:var(--solid);background:var(--solid-tint)}
+.tag.heur{color:var(--heur);background:var(--heur-tint)}
+.tag.subst{color:var(--subst);background:var(--subst-tint)}
+.tag.hyp{color:var(--muted);background:transparent;border:1px solid var(--rule)}
+.legend{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px 24px;margin:16px 0 0;padding:14px 16px;background:var(--surface);border:1px solid var(--rule);border-radius:var(--radius)}
+.legend div{font-size:15px;line-height:1.4;color:var(--muted)}
+.legend .tag{margin-bottom:4px}
+.first{background:var(--accent-tint);border:1px solid var(--rule);padding:16px 20px;border-radius:var(--radius);margin:8px 0}
+.first h2{margin-top:0;font-size:23px}
+.first ol{padding-left:20px}
+.first li{margin-bottom:10px}
+.tblwrap{margin:10px 0 14px;border:1px solid var(--rule);border-radius:var(--radius);background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:15px}
+th,td{padding:8px 10px;border-bottom:1px solid var(--rule);text-align:left;vertical-align:top}
+thead th{font-family:var(--mono);font-size:12px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);font-weight:500;background:var(--tint)}
+tbody tr:last-child td{border-bottom:0}
+td.metric,th.metric{text-align:right;font-family:var(--mono);font-size:14.5px}
+td.hi{font-weight:600}
+.rep{color:var(--rep)}.dem{color:var(--dem)}
+.note{font-size:15px;color:var(--muted);max-width:74ch;margin:-4px 0 14px}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px 28px}
+figure{margin:12px 0 16px;max-width:640px}
+figure svg{width:100%;height:auto;display:block}
+figcaption{font-size:14.5px;color:var(--muted);margin-top:6px;max-width:74ch}
+.svgtxt{font-family:var(--mono);font-size:11px;fill:var(--muted)}
+.svglbl{font-family:var(--sans);font-size:12px;font-weight:600}
+.share{display:flex;height:26px;border-radius:var(--radius);overflow:hidden;max-width:640px;margin:8px 0 6px;font-family:var(--mono);font-size:12.5px;color:var(--surface)}
+.share span{display:flex;align-items:center;justify-content:center;white-space:nowrap}
+.share .v{background:var(--chv)}.share .p{background:var(--chp)}.share .t{background:var(--cht)}
+.steps{counter-reset:step;list-style:none;padding-left:0}
+.steps li{counter-increment:step;display:grid;grid-template-columns:34px minmax(0,1fr);gap:10px;margin-bottom:10px;max-width:none}
+.steps li::before{content:counter(step);font-family:var(--mono);font-size:13px;color:var(--muted);padding-top:3px}
+.steps li>div{max-width:74ch}
+.tblwrap{overflow-x:auto} /* base scroll guard; MI-011 adds the edge fades when the scope class is active */
+details{border:1px solid var(--rule);border-radius:var(--radius);background:var(--surface);padding:10px 16px;margin:10px 0}
+summary{cursor:pointer;font-weight:600}
+code{font-family:var(--mono);font-size:.92em;background:var(--tint);padding:1px 5px;border-radius:var(--radius)}
+footer{margin-top:28px;color:var(--muted);font-size:14px}
+/* Reading-position marker on the left edge: adaptation of zws record DR-010 (own licence) from a scroll
+   container to the document; the gradient is a line, never a fill (zws wiki: gradient-jako-linia). */
+.kmark{position:fixed;left:0;top:0;height:10vh;width:3px;background:var(--k-grad);z-index:8;border-radius:0 2px 2px 0;display:none}
+@supports (animation-timeline:scroll()){
+  .kmark{display:block;animation:kmark linear both;animation-timeline:scroll(root block)}
+  @keyframes kmark{from{top:0}to{top:90vh}}
+}
+/* zws records emitted with `zws emit --tryb Read --scope "#doc"`: TY-006, TY-008, MI-010, MI-011, KA-009.
+   Only the fade colour of MI-011 was retokenised from #fff to var(--surface) so it holds in both themes. */
+#doc.fx-on .metric,#doc.fx-on .dots,#doc.fx-on .unit-id,#doc.fx-on .lawtext{font-variant-numeric:tabular-nums lining-nums}
+#doc.fx-on h1,#doc.fx-on h2,#doc.fx-on h3{font-feature-settings:"kern" 1,"liga" 1,"dlig" 1,"calt" 1;text-rendering:optimizeLegibility}
+#doc.fx-on table.cmp tbody tr{transition:background .15s var(--k-ease)}
+#doc.fx-on table.cmp tbody tr:hover{background:rgba(26,44,71,.05)}
+#doc.fx-on table.cmp tbody tr:hover td:first-child{box-shadow:inset 2px 0 0 var(--k-navy)}
+#doc.fx-on .tblwrap{overflow-x:auto;-webkit-overflow-scrolling:touch;
+  background:linear-gradient(90deg,var(--surface) 30%,rgba(255,255,255,0)),
+             linear-gradient(90deg,rgba(255,255,255,0),var(--surface) 70%) 100% 0,
+             radial-gradient(farthest-side at 0 50%,rgba(40,30,20,.14),transparent),
+             radial-gradient(farthest-side at 100% 50%,rgba(40,30,20,.14),transparent) 100% 0;
+  background-repeat:no-repeat;background-size:40px 100%,40px 100%,14px 100%,14px 100%;background-attachment:local,local,scroll,scroll}
+#doc.fx-on table.cmp{min-width:720px}
+#doc.fx-on details.dsec > div,#doc.fx-on details > .dbody{display:grid;grid-template-rows:0fr;transition:grid-template-rows .32s var(--k-ease)}
+#doc.fx-on details[open] > div,#doc.fx-on details[open] > .dbody{grid-template-rows:1fr}
+#doc.fx-on details > div > *{overflow:hidden}
+
+/* embedded code and results (appendix A.4-A.10) */
+details.codeblk summary .meta{font-family:var(--mono);font-size:12px;color:var(--muted);font-weight:400;margin-left:8px}
+.codebar{display:flex;justify-content:flex-end;margin:4px 0}
+.copybtn{font-family:var(--mono);font-size:12px;letter-spacing:.04em;padding:4px 10px;border:1px solid var(--rule);border-radius:var(--radius);background:var(--surface);color:var(--accent-ink);cursor:pointer}
+.copybtn:hover{border-color:var(--accent)}
+.copybtn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+pre{margin:0 0 8px;max-height:520px;overflow:auto;background:var(--tint);padding:12px 14px;border-radius:var(--radius);font-family:var(--mono);font-size:12.5px;line-height:1.45;white-space:pre;tab-size:4}
+pre code{background:transparent;padding:0;font-size:inherit}
+.tocd{border:0;padding:0;margin:0;background:transparent}
+.tocd summary{display:none}
+@media (max-width:1000px){
+  .layout{grid-template-columns:1fr;gap:16px}
+  nav.toc{position:static;padding-bottom:6px;border-bottom:1px solid var(--rule)}
+  .tocd summary{display:flex;align-items:center;justify-content:space-between;list-style:none;padding:12px 14px;min-height:44px;border:1px solid var(--rule);border-radius:var(--radius);background:var(--surface);font-weight:600;cursor:pointer}
+  .tocd summary::-webkit-details-marker{display:none}
+  .tocd summary::after{content:"+";font-family:var(--mono);font-size:16px;color:var(--muted)}
+  .tocd[open] summary::after{content:"\2212"}
+  nav.toc ol{flex-direction:column;gap:2px;margin-top:6px}
+  nav.toc a{display:flex;align-items:center;min-height:44px;padding:8px 12px;border-inline-start:2px solid var(--rule);border-radius:0 var(--radius) var(--radius) 0;white-space:normal;font-size:15.5px}
+  nav.toc .n{min-width:22px}
+  .kmark{display:none}
+  .kback{display:inline-block}
+}
+/* narrow screens: numeric tables keep a sticky row label while scrolling sideways; textual tables stack row by row */
+.narrow-note{display:none}
+@media (max-width:700px){
+  .narrow-note{display:block;font-size:14px;color:var(--muted);margin-top:8px}
+  table.cmp:not(.stack) th:first-child,table.cmp:not(.stack) td:first-child{position:sticky;left:0;background:var(--surface);z-index:1;max-width:44vw;box-shadow:inset -1px 0 0 var(--rule)}
+  table.cmp:not(.stack) thead th:first-child{background:var(--tint)}
+  #doc.fx-on table.cmp.stack,table.cmp.stack{min-width:0}
+  table.cmp.stack thead{display:none}
+  table.cmp.stack tr{display:block;padding:8px 0;border-bottom:1px solid var(--rule)}
+  table.cmp.stack tbody tr:last-child{border-bottom:0}
+  table.cmp.stack td{display:block;border:0;padding:2px 10px;text-align:left}
+  table.cmp.stack td::before{content:attr(data-label);display:block;font-family:var(--mono);font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);margin-top:4px}
+  #doc.fx-on table.cmp.stack tbody tr:hover td:first-child{box-shadow:none}
+  table.cmp.stack td[data-label="#"]::before{content:none}
+  table.cmp.stack td[data-label="#"]{font-family:var(--mono);color:var(--muted);font-size:13px;padding-bottom:0}
+}
+@media (prefers-reduced-motion:no-preference){html{scroll-behavior:smooth}}
+@media (prefers-reduced-motion:reduce){*{transition:none !important;animation:none !important}html{scroll-behavior:auto}}
+</style>
+</head>
+<body>
+<div class="kmark" aria-hidden="true"></div>
+<div class="wrap fx-on" id="doc">
+<header class="top">
+  <h1>Channel Decomposition of Political Ads</h1>
+  <p class="sub">Selected measurement steps of your Sections 2&ndash;4, adapted to a fresh 22-ad sample, then extended with an omni embedder that encodes any subset of image, filtered audio and text jointly, so that each channel&rsquo;s contribution to the partisan signal can be decomposed.</p>
+  <p class="byline">A same-day proof of concept after session 1 of 851-0762, 25 September 2026. Prepared for Andrea Ciccarone by Aleksander Rej (UZH exchange student), built with an AI coding agent in about one hour of compute on one RTX 5080 plus one hour of write-up. Every number is descriptive; n&nbsp;=&nbsp;22.</p>
+  <p class="byline" style="border-left:3px solid currentColor;padding-left:.8em;margin-top:1em"><strong>About this public copy (1 October 2026).</strong> Shared as a worked example of how far an agentic AI workflow can get, in a few hours, in replicating selected measurement steps of a recent working paper and extending one of them. Built in zen-system, the author&rsquo;s own agent harness (in development since 2025); models used in the replication: Claude Fable 5.1 (Anthropic) and GPT-6 Astra (OpenAI). It is an independent student proof of concept: not a review or evaluation of the original paper, not peer-reviewed, and not affiliated with or endorsed by the paper&rsquo;s author or by ETH Zurich. Original paper: Andrea Ciccarone (2026), &ldquo;An Image is Worth 1000 Words? Partisanship and Attention in Videos&rdquo;, working paper, version of 16 June 2026 (<a href="https://andreaciccarone.github.io/Video_Partisanship_draft.pdf">PDF on the author&rsquo;s site</a>). The page below is unchanged from the version prepared for the author on 25 September, except for this note, one sentence on data download (section 4) and one sentence on file identity (appendix). Code, results and references: <a href="https://github.com/ARejGH/channel-decomposition-poc">repository</a>.</p>
+  <p class="narrow-note">On a phone the numeric tables and the code blocks scroll sideways (the row label stays put); the page reads more easily on a laptop.</p>
+  <div class="legend" aria-label="Certainty legend">
+    <div><span class="tag solid">Solid</span><br>Measured on our data; the number reproduces from the cached embeddings in two independent implementations. A fact about this sample, not the population.</div>
+    <div><span class="tag heur">Heuristic</span><br>Descriptive at n&nbsp;=&nbsp;22 (AUC standard error roughly 0.12 under the null). Direction may hold; the magnitude is uncertain and a rigorous design would change it.</div>
+    <div><span class="tag subst">Substituted</span><br>Stands in for an element of the paper we did not have. Every substitution is listed in section&nbsp;5 with its consequence.</div>
+    <div><span class="tag hyp">Hypothesis</span><br>A mechanism we propose but did not test. Comes with the test that would settle it.</div>
+  </div>
+</header>
+
+<div class="layout">
+<nav class="toc" id="toc" aria-label="Sections">
+  <details class="tocd" open>
+  <summary>Contents</summary>
+  <ol>
+    <li><a href="#first"><span class="n">0</span>Read first</a></li>
+    <li><a href="#b"><span class="n">1</span>Omni embedder, channel subsets</a></li>
+    <li><a href="#a"><span class="n">2</span>CLIP mini-replication</a></li>
+    <li><a href="#data"><span class="n">3</span>Data and pipeline</a></li>
+    <li><a href="#protocol"><span class="n">4</span>Research protocol</a></li>
+    <li><a href="#subst"><span class="n">5</span>Substitutions</a></li>
+    <li><a href="#limits"><span class="n">6</span>Limitations</a></li>
+    <li><a href="#backlog"><span class="n">7</span>Uncertainty backlog</a></li>
+    <li><a href="#rigor"><span class="n">8</span>A rigorous version</a></li>
+    <li><a href="#questions"><span class="n">9</span>Questions for you</a></li>
+    <li><a href="#appendix"><span class="n">A</span>Appendix</a></li>
+  </ol>
+  </details>
+</nav>
+
+<main class="fx-on">
+<section id="first" class="first">
+  <h2>0. Read first: four findings, two questions</h2>
+  <ol>
+    <li><span class="tag solid">Solid</span> In a mean-pooled omni embedder the <strong>joint representation follows the visual channel</strong>: in cross-party composites the joint-condition party classifier followed the visual donor in 19/19 distinct pairs against prosody and 19/19 against text (17/19 and 17/19 when the two donor ads are excluded from the prototype); prosody against text is 10/19, which establishes no dominance either way. Shapley shares of absolute contribution are V&nbsp;0.43, P&nbsp;0.28, T&nbsp;0.29, stable across two scoring methods (section&nbsp;1). These are properties of this embedder on these ads; the identity confound of 6.1 applies to all of them.</li>
+    <li><span class="tag hyp">Hypothesis</span> The dominance may be a <strong>token-count effect</strong>: the embedding is a mean over tokens, and video contributes far more tokens than audio or text at our settings (rates in 6.2; realised counts were not logged). Sampling at 0.5 and 0.25 fps would show whether the shares move; settling the mechanism needs a content-preserving control, such as frame duplication or per-modality reweighted pooling (6.2).</li>
+    <li><span class="tag solid">Solid</span> The <strong>modality gap is measurable inside an omni model</strong>: the distance between condition means is largest for V&ndash;T (0.70) and smallest for A&ndash;P (0.17). It does <em>not</em>, however, explain why zero-shot anchor scores sit at about 0.70 in every condition: centering each condition on its own mean and renormalising leaves those AUCs unchanged (V 0.73&nbsp;&rarr;&nbsp;0.74, P and T unchanged), because a constant offset within a condition does not change rankings. Why the anchors separate the parties only weakly is open (1.4).</li>
+    <li><span class="tag heur">Heuristic</span> Your exposure pattern reproduces qualitatively at n&nbsp;=&nbsp;22 with CLIP: image AUC is flat from 3&nbsp;s on, text AUC rises from chance to 0.65 by 45&nbsp;s (section&nbsp;2). And the caveat that governs everything above: with one candidate on the R side and two on the D side, <strong>identity leaks into every channel</strong>, so absolute AUCs measure who is on screen, not partisan style (6.1).</li>
+  </ol>
+  <p><strong>Two questions.</strong> Your Appendix A.2 shows the image accumulation curve is essentially invariant to chunk length; was the fitted 40.38-word equivalent re-estimated under those alternatives, and how much did it move? And could a filtered-audio arm be added to a survey design that currently standardises delivery with synthetic voices? Details in section&nbsp;9.</p>
+</section>
+
+<section id="b">
+  <h2>1. Omni embedder, channel subsets, Shapley decomposition</h2>
+  <p>Model: <code>nvidia/omni-embed-nemotron-3b</code>, a retrieval fine-tune of the Qwen2.5-Omni thinker (4.70&nbsp;billion parameters by the safetensors index; embedding = mean of the last hidden states over all tokens). Each ad was split into three channel conditions: <strong>V</strong> muted video (visual content, including any on-screen text), <strong>P</strong> filtered audio (low-passed at 400&nbsp;Hz and loudness-normalised, intended to keep pitch and rhythm and to remove intelligible words; intelligibility, residual words and voice identity were not tested), <strong>T</strong> transcript. All seven non-empty subsets were encoded as one input each, plus two leakage references: <strong>A</strong> raw audio with words, <strong>VA</strong> the original ad. One model embeds every condition, which is what makes the subsets comparable and the decomposition possible.</p>
+
+  <h3>1.1 Partisan signal per condition <span class="tag solid">Solid</span></h3>
+  <div class="tblwrap"><table class="cmp">
+    <thead><tr><th>AUC, leave-one-out</th><th class="metric">V</th><th class="metric">P</th><th class="metric">T</th><th class="metric">VP</th><th class="metric">VT</th><th class="metric">PT</th><th class="metric">VPT</th><th class="metric">A</th><th class="metric">VA</th></tr></thead>
+    <tbody>
+      <tr><td>Zero-shot anchors (cosine to R minus D text anchors; cross-modal, CLIP-style)</td><td class="metric">0.73</td><td class="metric">0.71</td><td class="metric">0.72</td><td class="metric">0.71</td><td class="metric">0.70</td><td class="metric">0.68</td><td class="metric">0.70</td><td class="metric">0.68</td><td class="metric">0.71</td></tr>
+      <tr><td>Prototype, within condition (cosine to mean<sub>R</sub>&minus;mean<sub>D</sub> of the other ads)</td><td class="metric hi">0.99</td><td class="metric">0.93</td><td class="metric">0.90</td><td class="metric hi">1.00</td><td class="metric hi">1.00</td><td class="metric">0.93</td><td class="metric hi">1.00</td><td class="metric">0.93</td><td class="metric hi">1.00</td></tr>
+      <tr><td>Logistic regression on the embedding</td><td class="metric hi">0.87</td><td class="metric">0.66</td><td class="metric">0.67</td><td class="metric hi">0.88</td><td class="metric hi">0.88</td><td class="metric">0.68</td><td class="metric hi">0.89</td><td class="metric">0.67</td><td class="metric hi">0.88</td></tr>
+    </tbody>
+  </table></div>
+  <p class="note">The three rows are different instruments and should be read down a column, not across rows. The near-perfect prototype values in V-containing conditions are the identity leak of 6.1, not partisan style.</p>
+
+  <h3>1.2 Shapley values of the three channels <span class="tag solid">Solid</span> <span class="tag heur">Heuristic</span></h3>
+  <p>Exact three-player Shapley values on per-condition scores standardized within condition, with the empty coalition at zero. The values sum to the score of the full VPT input by construction (asserted numerically). Share of absolute contribution, prototype scoring:</p>
+  <div class="share" role="img" aria-label="Shapley shares: visual 43 percent, prosody 28 percent, text 29 percent"><span class="v" style="flex:43">V 0.43</span><span class="p" style="flex:28">P 0.28</span><span class="t" style="flex:29">T 0.29</span></div>
+  <div class="tblwrap"><table class="cmp">
+    <thead><tr><th>Scoring</th><th class="metric">V share</th><th class="metric">P share</th><th class="metric">T share</th><th>AUC of each channel&rsquo;s &phi; against party (V / P / T)</th></tr></thead>
+    <tbody>
+      <tr><td>Prototype (within condition)</td><td class="metric hi">0.43</td><td class="metric">0.28</td><td class="metric">0.29</td><td class="metric">0.89 / 0.88 / 0.89</td></tr>
+      <tr><td>Zero-shot anchors</td><td class="metric hi">0.44</td><td class="metric">0.29</td><td class="metric">0.27</td><td class="metric">0.64 / 0.66 / 0.65</td></tr>
+    </tbody>
+  </table></div>
+  <p class="note">The shares (solid: a property of this model on these ads) agree across scoring methods. Whether they say anything about partisan communication is heuristic, for the reasons in 6.1 and 6.2.</p>
+
+  <h3>1.3 Conflict test <span class="tag solid">Solid</span></h3>
+  <p>Cross-party composites: the first channel from an ad of one party, the second from an ad of the other (10 draws per direction, seeded, drawn with replacement, which yielded 19 distinct pairs per test). Each composite is scored by the sign of its cosine to the party prototype of the corresponding joint condition (VP, VT or PT); &ldquo;the first source wins&rdquo; means the composite is classified with the first donor&rsquo;s party. With prototypes from all 22 ads: <strong>19/19</strong> for V against P, <strong>19/19</strong> for V against T, <strong>10/19</strong> for P against T. With the two donor ads removed from the prototype (the conservative variant): <strong>17/19</strong>, <strong>17/19</strong>, <strong>9/19</strong>. In every sampled composite with a visual donor, the classifier followed the visual donor; 10/19 for prosody against text establishes no dominance in either direction.</p>
+
+  <h3>1.4 Modality gap inside the omni model <span class="tag solid">Solid</span></h3>
+  <p>Euclidean distance between the means of unit embeddings per condition: V&ndash;T&nbsp;0.70, V&ndash;P&nbsp;0.62, P&ndash;T&nbsp;0.39, A&ndash;P&nbsp;0.17. The gap you center away in Section&nbsp;2.2 is present in a natively multimodal model as well. Two things it does not show. First, it is not what limits the zero-shot row in 1.1: rank-based scores within one condition are invariant to a constant offset, and centering plus renormalising moves those AUCs by at most 0.01. The gap matters where scores from different modalities are pooled or compared in absolute terms, which is what a pooled model does. Second, A&ndash;P at 0.17 is a distance between centroids; per ad, the distance between the raw-audio and filtered-audio embeddings averages 0.41 (range 0.29&ndash;0.63), so the filter changed individual embeddings substantially even though the two condition means stay close.</p>
+</section>
+
+<section id="a">
+  <h2>2. CLIP mini-replication of Sections 2.1&ndash;2.3, 3 and 4.1</h2>
+  <p>Frame every 3&nbsp;s and the transcript cut into as many chunks; CLIP ViT-B/32 (the 512-dimensional space of your Section&nbsp;2.2); mean per ad; unit-sphere mean-centering per modality with the mean over all 22 ads, as in your step (ii), so the held-out ad contributes 1/22 to the centre (centering inside each training fold instead gives image AUC 0.64, text unchanged); leave-one-out logistic classifier per modality; a stacked logistic on the two predicted probabilities that is not nested (its inputs were produced with the held-out ad&rsquo;s label in the base fits; a nested version gives 0.52); exposure curve on prefixes; concept decomposition by non-negative sparse projection on 50 concept words. Not attempted: the transfer of ad-trained classifiers to TV news (your Section&nbsp;3.1&ndash;3.2), the conversion-rate estimate, the concept-removal effects of Section&nbsp;4 and the survey experiment.</p>
+  <div class="grid2">
+    <div>
+      <div class="tblwrap"><table class="cmp">
+        <thead><tr><th>Measure</th><th class="metric">Image</th><th class="metric">Text</th><th class="metric">Stacked</th></tr></thead>
+        <tbody>
+          <tr><td>AUC, leave-one-out <span class="tag heur">Heuristic</span></td><td class="metric">0.66</td><td class="metric">0.68</td><td class="metric">0.46</td></tr>
+          <tr><td>Correlation of image and text predictions</td><td class="metric" colspan="3">&minus;0.04</td></tr>
+          <tr><td>Modality gap, norm of mean difference, before &rarr; after centering <span class="tag solid">Solid</span></td><td class="metric" colspan="3">1.11 &rarr; 0.10</td></tr>
+        </tbody>
+      </table></div>
+      <p class="note">The stacked value is not interpretable: the evaluation is not nested (0.46 at C&nbsp;=&nbsp;10; nested 0.52) and both are at chance. The near-zero correlation is in the direction of your &ldquo;far from perfectly correlated&rdquo;, but is not evidence at this n. The gap figure is one you do not report; before centering the two modality mean directions sit about 72&deg; apart (the means are not unit vectors, so the angle is computed from their normalised dot product, not from the chord).</p>
+    </div>
+    <div>
+      <figure>
+        <svg viewBox="0 0 560 300" role="img" aria-labelledby="expo-title">
+          <title id="expo-title">Exposure curve: leave-one-out AUC on the first k seconds, image versus text</title>
+          <g stroke="var(--rule)" stroke-width="1">
+            <line x1="60" y1="40" x2="500" y2="40"/><line x1="60" y1="110" x2="500" y2="110"/><line x1="60" y1="250" x2="500" y2="250"/>
+          </g>
+          <line x1="60" y1="180" x2="500" y2="180" stroke="var(--chance)" stroke-width="1.5" stroke-dasharray="4 4"/>
+          <g class="svgtxt" text-anchor="end">
+            <text x="52" y="44">0.70</text><text x="52" y="114">0.60</text><text x="52" y="184">0.50</text><text x="52" y="254">0.40</text>
+          </g>
+          <g class="svgtxt" text-anchor="middle">
+            <text x="60" y="272">3 s</text><text x="170" y="272">6 s</text><text x="280" y="272">12 s</text><text x="390" y="272">24 s</text><text x="489" y="272">45 s</text>
+            <text x="280" y="292">prefix length, log scale</text>
+          </g>
+          <polyline fill="none" stroke="var(--chv)" stroke-width="2.5" points="60,96 170,82 280,124 390,61 489,96"/>
+          <g fill="var(--chv)"><circle cx="60" cy="96" r="4"/><circle cx="170" cy="82" r="4"/><circle cx="280" cy="124" r="4"/><circle cx="390" cy="61" r="4"/><circle cx="489" cy="96" r="4"/></g>
+          <polyline fill="none" stroke="var(--chp)" stroke-width="2.5" points="60,194 170,229 280,166 390,110 489,75"/>
+          <g fill="var(--chp)"><circle cx="60" cy="194" r="4"/><circle cx="170" cy="229" r="4"/><circle cx="280" cy="166" r="4"/><circle cx="390" cy="110" r="4"/><circle cx="489" cy="75" r="4"/></g>
+          <text class="svglbl" x="500" y="100" fill="var(--chv)">image</text>
+          <text class="svglbl" x="500" y="79" fill="var(--chp)">text</text>
+          <text class="svgtxt" x="500" y="184">chance</text>
+        </svg>
+        <figcaption>Exposure curve <span class="tag heur">Heuristic</span>: AUC of the classifier trained on full ads, tested on the first k seconds (leave-one-out). Image 0.62 / 0.64 / 0.58 / 0.67 / 0.62, text 0.48 / 0.43 / 0.52 / 0.60 / 0.65 at 3 / 6 / 12 / 24 / 45&nbsp;s.</figcaption>
+      </figure>
+    </div>
+  </div>
+  <h3>Concept decomposition <span class="tag heur">Heuristic</span> <span class="tag subst">Substituted</span></h3>
+  <p>Mean concept weight, R minus D. Images: <span class="rep">rally, crowd, freedom, patriotism, economy</span> against <span class="dem">healthcare, hospital, countryside, love, education</span>. Text: <span class="rep">unity, strength, pride, freedom, patriotism</span> against <span class="dem">abortion, healthcare, military, hospital, police</span>. Reconstruction cosine is only 0.14 (image) and 0.25 (text), for two reasons: fifty concepts against your 160, and a sparsity search that aimed at about eight active concepts but stopped after a fixed number of steps, reaching 4.8 (image) and 4.4 (text) on average, with 25 of 44 decompositions below the accepted band. The weights are indicative at best.</p>
+</section>
+
+<section id="data">
+  <h2>3. Data and pipeline</h2>
+  <ul>
+    <li><span class="tag solid">Solid</span> 22 ads from official 2024 candidate channels on YouTube: 10 from Donald J. Trump (R), 12 from Kamala Harris and Joe Biden (D). Label = party of the sponsoring candidate, as in your Section&nbsp;2.1. Length 28&ndash;80&nbsp;s, 360p.</li>
+    <li><span class="tag solid">Solid</span> Transcripts from faster-whisper large-v3 with word timestamps (53&ndash;257 words per ad); frames at one per 3&nbsp;s for section&nbsp;2 and at 1&nbsp;fps, at most 64 frames, for section&nbsp;1.</li>
+    <li><span class="tag solid">Solid</span> Part A ran in under 90&nbsp;s (observed, not logged); Part B took about 6.5&nbsp;min including one out-of-memory restart (212&nbsp;s after the resume). Ad-level and condition-level embeddings are cached, so sections 1.1&ndash;1.4 and the Part A AUCs and gap regenerate from the files; the exposure curve and the concept weights need the frame-level embeddings, which were not kept.</li>
+  </ul>
+</section>
+
+<section id="protocol">
+  <h2>4. Research protocol, step by step</h2>
+  <p class="note">Condensed from the session log. About one hour of wall-clock time from locating the paper to the last result, then the write-up.</p>
+  <ol class="steps">
+    <li><div><strong>Source.</strong> Located the job market paper (version of 16 June 2026, 76 pages) and the ETH lecture deck on the author&rsquo;s site; extracted the pipeline of Sections 2.1&ndash;2.3, 3 and 4.1 and the modality-gap treatment of 2.2. No code or replication package accompanies the paper (the author&rsquo;s GitHub holds a personal site and a math-camp repo), so the pipeline was re-implemented from the text. <span class="tag solid">Solid</span></div></li>
+    <li><div><strong>Scope.</strong> A same-day proof of concept in two parts: (A) mini-replication with CLIP, (B) an omni-embedder extension. Hardware inventory before any install: RTX 5080 16&nbsp;GB, torch 2.8 cu128, transformers 4.57.3, scikit-learn 1.8, faster-whisper 1.2.1, ffmpeg. Nothing had to be installed for (A).</div></li>
+    <li><div><strong>Sample.</strong> Listed the official YouTube channels of the 2024 candidates (Trump; Harris; Biden), took the first 30&ndash;40 uploads of each feed, kept those between 25 and 95&nbsp;s, and removed four R-feed items that were not campaign ads by title (a Christmas message, a cabinet-confirmation clip, a weekly recap, an endorsement clip); no D-feed item needed a title exclusion. Result: 12 D, 10 R, 28&ndash;80&nbsp;s. Downloaded at 360p with audio. Auto-captions were missing for most R ads and were replaced by Whisper transcripts for all ads, which is also closer to the paper&rsquo;s input. <span class="tag subst">Substituted</span></div></li>
+    <li><div><strong>Part A, one script, configuration first</strong> (frame step, exposure grid, concept list at the top): frames every 3&nbsp;s; transcript words assigned to frame windows; CLIP ViT-B/32; per-ad means; unit-sphere centering per modality; leave-one-out logistic per modality and stacked; prefix exposure curve; non-negative Lasso projection on centered concept vectors. Deviations from the paper are enumerated in the script. Run time under 90&nbsp;s. <span class="tag solid">Solid</span></div></li>
+    <li><div><strong>Part B environment.</strong> A virtual environment on top of the system packages; <code>qwen-omni-utils</code> and <code>torchvision</code> 0.23 (cu128) installed with the operator&rsquo;s approval; <code>nvidia/omni-embed-nemotron-3b</code> (9.4&nbsp;GB) downloaded while (A) ran. The <code>sentence-transformers</code> route in the model card failed on module paths from an older library version; the <code>transformers</code> route worked with 4.57.3, without the preview branch the card recommends.</div></li>
+    <li><div><strong>Channel preparation.</strong> Per ad: muted video (V), audio low-passed at 400&nbsp;Hz twice plus loudness normalization (P), video re-muxed with the filtered audio (VP), raw audio (A), Whisper word transcript (T). 66 variant files and 22 transcripts. <span class="tag subst">Substituted</span></div></li>
+    <li><div><strong>Encoding.</strong> 9 conditions &times; 22 ads, 8 text anchors and 60 composite evaluations (57 distinct cross-party pairs; one pair per test was drawn twice because the draw was with replacement) through the same model, every embedding cached to disk. Two failures fixed on the way: the transformers 4.57 processor loader tripping over the snapshot&rsquo;s <code>additional_chat_templates</code> folder (loaded from a symlinked copy without it), and one CUDA out-of-memory on the longest ad (cache clearing plus expandable segments, resumed from the cache). 212&nbsp;s after the resume.</div></li>
+    <li><div><strong>Analysis.</strong> Three scores per condition; exact three-player Shapley values on standardized scores with the sum identity asserted; conflict test against full-sample prototypes; distances between condition means. <span class="tag solid">Solid</span></div></li>
+    <li><div><strong>Reading rules fixed before the numbers were read:</strong> AUC standard error about 0.12; agreement between anchor and prototype scoring is the robustness signal; A&nbsp;vs&nbsp;P and VA&nbsp;vs&nbsp;VPT are the leakage checks. The interaction term was dropped after inspection as a scale artifact (7). <span class="tag heur">Heuristic</span></div></li>
+    <li><div><strong>Artifacts.</strong> Two scripts, two preparation scripts, two results files, this page; all in the course folder. Data, variant files and the embedding cache stay on the GPU machine.</div></li>
+  </ol>
+</section>
+
+<section id="subst">
+  <h2>5. Substitutions for elements of the paper we did not have</h2>
+  <div class="tblwrap"><table class="cmp stack">
+    <thead><tr><th>In the paper</th><th>Here</th><th>Consequence</th></tr></thead>
+    <tbody>
+      <tr><td>15,427 sponsor-labeled ads from the 2016, 2018 and 2020 cycles (Wesleyan Media Project, Kantar/CMAG), many candidates and PACs across House, Senate and presidential races</td><td>22 ads, one R candidate and two D candidates, 2024</td><td>Identity (face, voice, name, campaign style) confounds partisanship in every channel (6.1); no inferential claims.</td></tr>
+      <tr><td>Transcripts of the ads</td><td>Whisper large-v3 transcripts</td><td>A substitute for the corpus transcripts; ASR errors on names possible, not audited (backlog&nbsp;6).</td></tr>
+      <tr><td>Neural-network classifier, 80/20 split</td><td>Logistic regression, leave-one-out; centering global as in the paper, not per fold</td><td>A modeling choice for n&nbsp;=&nbsp;22; less capacity, no seeds to vary; fold-wise centering would give image 0.64 instead of 0.66.</td></tr>
+      <tr><td>Stacked model following Ludwig and Mullainathan</td><td>Logistic on the two predicted probabilities, not nested</td><td>Not interpretable at this n: 0.46 as run, 0.52 nested, both at chance.</td></tr>
+      <tr><td>SpLICE with 160 topics and emotions, sparsity by matched reconstruction</td><td>Non-negative Lasso on 50 hand-picked words; sparsity search aimed at about 8 active concepts, achieved 4.8 / 4.4 on average (25 of 44 below the target band)</td><td>Poor reconstruction (0.14 / 0.25); concept rankings indicative only.</td></tr>
+      <tr><td>Exposure in five-second chunks, K&nbsp;=&nbsp;1&hellip;30 randomly sampled chunks (5&ndash;150&nbsp;s), on TV-news clips; prefix version in your Appendix A.1, chunk-length robustness in A.2</td><td>Prefix of the first k seconds on the 22 ads, classifier trained on the other ads at full length</td><td>Different corpus and estimator; no conversion rate computed; the prefix design already exists in your A.1.</td></tr>
+      <tr><td>CLIP as the only shared space</td><td>Section&nbsp;1 adds an omni embedder with audio; prosody by low-pass filtering</td><td>An extension, not a replication; the prosody operationalization is itself a substitute (6.4).</td></tr>
+      <tr><td>Survey experiment on real footage</td><td>None</td><td>The causal half of the paper is out of scope for this note.</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="limits">
+  <h2>6. Limitations</h2>
+  <h3>6.1 Identity leaks into every channel <span class="tag solid">Solid</span></h3>
+  <p>With a single candidate on the R side (Trump) and two on the D side (Biden, then Harris), each with one campaign&rsquo;s production style, V sees a face and a logo, P keeps the speaker&rsquo;s voice after the filter, T contains the names, and each campaign reuses its music. The near-perfect within-condition AUCs of 1.1 measure identity. Your corpus dilutes this over many candidates and PACs; ours does not. The relative structure (shares, conflict test) is less exposed to this confound but not immune to it: a channel that carries identity more strongly will also dominate composites. Everything in section&nbsp;1 is a statement about the embedder before it is one about ads.</p>
+  <h3>6.2 Token-count weighting <span class="tag hyp">Hypothesis</span></h3>
+  <p>If a joint-modal embedding is a mean over tokens, a channel that contributes more tokens weighs more regardless of what it says. At our settings video contributes far more tokens than audio or text: the vision encoder emits one token per 28&times;28 pixels per pair of frames (patch 14, 2&times;2 spatial merge, temporal patch 2, from the model configuration), so at most 64 tokens per frame pair and about 2,000 tokens for 64 frames, against a transcript of 50&ndash;260 words; the realised counts per input were not logged. The audio encoder emits one token per 40&nbsp;ms (Qwen2.5-Omni report, Section&nbsp;2.2), about 1,500 tokens for a 60&nbsp;s track. Two external observations point the same way. NVIDIA&rsquo;s own evaluation of this model on FineVideo finds that simple early fusion of audio and video underperforms audio alone (0.470 against 0.541), while embedding the two separately and combining them late recovers to 0.566. And the multimodal-LLM literature measures this kind of imbalance directly: Shapley-based modality contributions (Parcalabescu and Frank, MM-SHAP, ACL 2023) and a modality dominance index with token compression as the remedy (Wu et al. 2025, arXiv:2508.10552). Sampling video at 0.5 or 0.25&nbsp;fps is a sensitivity test, not a decisive one, because it also changes visual information, coverage and repetition. A decisive test keeps content fixed and varies tokens: duplicate frames, or reweight the mean by modality, and watch whether the shares and the swap outcomes move. Mean pooling also averages contextualised states, so tokens of one modality can carry information from another; the hypothesis is about weight, not isolation. Until such a control is run, &ldquo;which modality carries the signal&rdquo; conclusions from omni embedders should carry a token-budget caveat.</p>
+  <h3>6.3 The modality gap did not go away, and it is not what limits zero-shot scoring <span class="tag solid">Solid</span></h3>
+  <p>Condition means are far apart (1.4), yet centering each condition on its own mean leaves the anchor AUCs where they are (at most 0.01 change). So the weak zero-shot separation is not a gap artifact; it says that the direction of these hand-written anchors is only loosely aligned with the direction along which the ads differ by party. Your per-modality centering remains necessary wherever scores from different modalities are pooled into one estimate, as in your stacked model; it is not needed for within-modality rankings.</p>
+  <h3>6.4 Prosody is an operationalization, not a measurement <span class="tag subst">Substituted</span></h3>
+  <p>The filtered-audio condition (400&nbsp;Hz low-pass applied twice, then loudness normalisation) is intended to remove intelligible words and keep pitch and rhythm; whether the words are gone, and how much voice identity and the soundtrack survive, was not tested. Loudness normalisation equalises level across ads, so loudness is only partly preserved. The manipulation is the content-filtered speech of Rogers, Scherer and Rosenthal (1971), designed to keep vocal affect cues while removing intelligibility; the speaker-identification literature reports that the spectral cues surviving such filters still support identifying the speaker, which is why voice identity is listed as a leak rather than a remote possibility. Near-identical AUCs for A and P say the filter did not remove the party signal, not that prosody carries it; per ad, the raw-audio and filtered-audio embeddings sit 0.41 apart on average, so the filter did change the representation. Dietrich, Hayes and O&rsquo;Brien&rsquo;s vocal-pitch measure would be the disciplined alternative.</p>
+  <h3>6.5 Small-sample estimators <span class="tag heur">Heuristic</span></h3>
+  <ul>
+    <li>The 0.12 figure is a null-ranking approximation of the AUC standard error at 10 versus 12; it is not an uncertainty estimate for differences between conditions, which were not computed.</li>
+    <li>Leave-one-out prototypes shift by class, because the held-out ad is missing only from its own class mean. This reorders ads (for T, full-sample versus leave-one-out prototypes move the AUC from 1.0 to 0.9 with 15 pairwise reversals); it is a different estimator, not a uniform deflation.</li>
+    <li>The interaction term v(VPT)&nbsp;&minus;&nbsp;v(V)&nbsp;&minus;&nbsp;v(P)&nbsp;&minus;&nbsp;v(T) on standardized scores is treated as a scale artifact and was dropped from the tables; it is still in <code>results_B.json</code> (fields <code>interaction_*</code>), without a label.</li>
+    <li>Zero-shot anchors are hand-written and their sensitivity was not measured; single-anchor AUCs on the cached anchors range from 0.27 to 0.93 for V, so the four-anchor average should not be read as stable.</li>
+  </ul>
+  <h3>6.6 Encoding choices <span class="tag solid">Solid</span></h3>
+  <p>Video at 1&nbsp;fps, at most 64 frames, low resolution (max 64&times;28&times;28 pixels per frame) to fit 16&nbsp;GB; every condition carries the constant prefix <code>passage:</code> so that conditions differ only by channel content; attention implementation <code>sdpa</code> rather than flash-attention. Whether any of these changes the ordering in section&nbsp;1 was not tested; the fps choice is the lever of 6.2.</p>
+</section>
+
+<section id="backlog">
+  <h2>7. Uncertainty backlog</h2>
+  <p class="note">Every claim the pipeline could not settle, with the action that would settle it. Nothing here is hidden in the tables above; where a row matters for a number, the number carries the tag.</p>
+  <div class="tblwrap"><table class="cmp stack">
+    <thead><tr><th>#</th><th>Claim</th><th>Confidence</th><th>Action</th><th>Why it matters</th></tr></thead>
+    <tbody>
+      <tr><td class="metric">1</td><td>The visual dominance in section&nbsp;1 is a token-count effect of mean pooling.</td><td>Medium</td><td>Verify: fps and max-frames ablation.</td><td>Decides whether section&nbsp;1 says anything about ads rather than about the embedder.</td></tr>
+      <tr><td class="metric">2</td><td><code>fps</code> and <code>max_frames</code> keys were honoured by the video loader.</td><td>Medium</td><td>Verify: inspect the processor&rsquo;s frame count per ad.</td><td>If ignored, video was sampled at the default 2&nbsp;fps, which strengthens row&nbsp;1.</td></tr>
+      <tr><td class="metric">3</td><td>The interaction term on standardized scores is a scale artifact, not sub-additivity.</td><td>Medium</td><td>Accepted as a caution; dropped from the tables, kept unlabeled in the results file.</td><td>Prevents a false &ldquo;channels interfere&rdquo; reading; not a proof that nothing else is in it.</td></tr>
+      <tr><td class="metric">4</td><td>Leave-one-out prototypes deflate AUCs uniformly and do not reorder ads.</td><td>Withdrawn</td><td>Checked and rejected: for T the AUC moves 1.0&nbsp;&rarr;&nbsp;0.9 with 15 pairwise reversals.</td><td>The leave-one-out prototype is a different estimator from the full-sample one (6.5).</td></tr>
+      <tr><td class="metric">5</td><td>A 400&nbsp;Hz low-pass isolates prosody.</td><td>Low</td><td>Defer: replace with a pitch and energy measure.</td><td>The filter follows Rogers, Scherer and Rosenthal (1971), but filtered speech is reported to retain speaker-identifying spectral cues, and the soundtrack&rsquo;s bass passes it; P results may reflect voice identity and music rather than delivery (6.4).</td></tr>
+      <tr><td class="metric">6</td><td>Whisper transcripts are free of name errors.</td><td>Medium</td><td>Verify: audit the 22 transcripts.</td><td>Affects the T channel and the concept ranking for text.</td></tr>
+      <tr><td class="metric">7</td><td>Party of the channel equals party of the sponsor for these 22 ads.</td><td>High</td><td>Accepted.</td><td>Matches the paper&rsquo;s labeling rule for candidate-sponsored ads.</td></tr>
+      <tr><td class="metric">8</td><td>Access terms for the Wesleyan Media Project / Kantar-CMAG ad corpus the paper uses.</td><td>Unknown</td><td>Ask the author.</td><td>Provenance is stated in the paper (Section&nbsp;2.1); access is not. Required for any rigorous replication (section&nbsp;8).</td></tr>
+      <tr><td class="metric">9</td><td>Fifty concepts with count-tuned sparsity approximate SpLICE with 160 and matched reconstruction.</td><td>High that it does not</td><td>Accepted as a known deviation.</td><td>Reconstruction 0.14 / 0.25; concept weights indicative only.</td></tr>
+      <tr><td class="metric">10</td><td>Anchor wording does not drive the zero-shot row.</td><td>Low</td><td>Verify: ensemble of 20 anchors per party.</td><td>Single-anchor AUCs on the cached anchors range from 0.27 to 0.93 for V; the four-anchor row is not stable.</td></tr>
+      <tr><td class="metric">11</td><td>The paper&rsquo;s conversion rate is insensitive to frame sampling density.</td><td>Unknown</td><td>Ask the author (section&nbsp;9).</td><td>Tests row&nbsp;1 for CLIP-style pipelines.</td></tr>
+      <tr><td class="metric">12</td><td>The stacked evaluation is not nested; nested and non-nested values are both at chance.</td><td>High</td><td>Accepted; a second run would nest it.</td><td>Neither 0.46 nor 0.52 should be read as a pooled-model result.</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="rigor">
+  <h2>8. What a rigorous version needs</h2>
+  <h3>8.0 What a second run would change, and why we did not re-run</h3>
+  <p>Two independent reviews of this page (a model-based review with full recomputation from the caches, and an adversarial audit) found five procedural defects. None changes a conclusion, which is why the numbers above stand as run, with the corrected values beside them. A second run is justified only if the numbers themselves matter to you.</p>
+  <ol>
+    <li>Conflict pairs drawn <em>without</em> replacement, and prototypes that exclude the two donor ads (already reported as the conservative variant: 17/19, 17/19, 9/19 instead of 19/19, 19/19, 10/19).</li>
+    <li>Centering inside each training fold and a nested stacked model (image AUC 0.64 instead of 0.66; stacked 0.52 instead of 0.46, both at chance).</li>
+    <li>A sparsity search that checks attainment before stopping (25 of 44 decompositions missed the target band, which depresses reconstruction and the concept weights).</li>
+    <li>Logged frame and token counts per condition, and a content-preserving token-count control (frame duplication, per-modality reweighted pooling) before any statement about token-count dominance (6.2).</li>
+    <li>A prosody channel measured by pitch and energy rather than approximated by a low-pass filter, and an anchor ensemble instead of four hand-written anchors per party.</li>
+  </ol>
+  <p>Beyond the defects, a rigorous version needs the following.</p>
+  <ol>
+    <li><strong>Dilute identity.</strong> Many candidates per party, as in your corpus, with leave-candidate-out validation so that no candidate appears in both training and test folds. Candidate fixed effects do not solve this: party is constant within candidate, so a within-candidate design can separate identity from style but cannot identify a party effect. Without this the channel decomposition measures faces and voices.</li>
+    <li><strong>Token-budget controls.</strong> Log realised frame and token counts per condition; run fps in {1, 0.5, 0.25} and max frames in {64, 32, 16} as sensitivity tests; then a content-preserving control (frame duplication, per-modality reweighted pooling); report Shapley shares and the swap fractions per cell. A second omni embedder (LCO-Embedding-Omni or jina-embeddings-v5-omni) to separate the model from the finding.</li>
+    <li><strong>Your Section&nbsp;4 at full strength.</strong> The 160-concept vocabulary and matched-reconstruction sparsity, applied per channel and per subset, so that the affective-versus-issue split can be tested for prosody as well.</li>
+    <li><strong>Report the gap, and what it touches.</strong> Norm of the modality-mean difference before and after centering, per corpus, as a standard diagnostic; it is one line and it makes the pooled estimates auditable. State alongside it that within-modality rankings are unaffected by the offset and that only pooled or absolute cross-modal comparisons are.</li>
+    <li><strong>Human baseline in the same four conditions</strong> (muted video, filtered audio, transcript, full ad) to ask whether the model weights channels the way viewers do. This is the bridge to your survey experiment and the natural prosody arm.</li>
+  </ol>
+</section>
+
+<section id="questions">
+  <h2>9. Questions for you</h2>
+  <ol>
+    <li>Your Appendix A.2 shows the image accumulation curve is essentially invariant to chunk length (three, five, ten seconds). Was the fitted conversion rate (40.38 words for one five-second visual glimpse) re-estimated under those alternatives, and how much did it move? Since your pipeline averages each modality separately, this speaks to the robustness of the conversion rate, not to the joint-pooling mechanism of 6.2.</li>
+    <li>Your survey standardises delivery with synthetic voices, which removes exactly the channel a prosody arm would test. Is a filtered-audio condition (no visuals, no intelligible words, original voices) feasible on your platform, and would you expect it to move emotions the way images do?</li>
+    <li>Is there a version of the ad corpus that could be shared for a supervised replication of Sections 2&ndash;4 with the omni extension, under whatever terms the data source allows?</li>
+  </ol>
+</section>
+
+<section id="appendix">
+  <h2>A. Appendix</h2>
+  <details open>
+    <summary>Files and parameters</summary>
+    <div class="dbody"><div>
+    <ul>
+      <li><code>poc_clip.py</code>, <code>results.json</code>: section&nbsp;2. Frame step 3&nbsp;s; exposures 3, 6, 12, 24, 45&nbsp;s; 50 concepts; logistic C&nbsp;=&nbsp;1 for the per-modality and exposure models, C&nbsp;=&nbsp;10 for the stacked model; leave-one-out classifiers with global centering; stacking not nested.</li>
+      <li><code>prep_b.py</code>, <code>poc_omni.py</code>, <code>results_B.json</code>, <code>omni_emb.json</code>: section&nbsp;1. Low-pass <code>lowpass=f=400</code> twice plus <code>loudnorm</code>; video fps 1, max 64 frames, min/max pixels 32&times;14&times;14 / 64&times;28&times;28; anchors 4 per party with the <code>query:</code> prefix, ads with the <code>passage:</code> prefix; Shapley weights 1/3, 1/6, 1/6, 1/3; swaps seeded (seed 0), 10 draws per direction with replacement, 19 distinct pairs per test.</li>
+      <li>Models: <code>openai/clip-vit-base-patch32</code>; <code>nvidia/omni-embed-nemotron-3b</code> (snapshot 865db1bb) via <code>transformers</code> 4.57.3, <code>qwen-omni-utils</code>, bf16, sdpa; <code>Systran/faster-whisper-large-v3</code>.</li>
+      <li>Runtime: section&nbsp;2 under 90&nbsp;s; section&nbsp;1 about 6&nbsp;min including one out-of-memory restart from cache.</li>
+    </ul>
+    </div></div>
+  </details>
+  <details>
+    <summary>Scores, in one paragraph</summary>
+    <div class="dbody"><div>
+    <p>For condition S and ad i with unit embedding e: anchor score = mean cos(e, R anchors) &minus; mean cos(e, D anchors); prototype score = cos(e<sub>i</sub>, mean<sub>R,&minus;i</sub> &minus; mean<sub>D,&minus;i</sub>); logistic AUC from leave-one-out predicted probabilities. For the Shapley values each condition&rsquo;s score is standardized across ads, v(&empty;)&nbsp;=&nbsp;0, and &phi;<sub>c</sub> = &Sigma;<sub>S&nbsp;&#8713;&nbsp;c</sub> w(|S|)[v(S&cup;{c}) &minus; v(S)] with w = 1/3, 1/6, 1/6, 1/3 for |S| = 0, 1, 1, 2. Shares are mean |&phi;<sub>c</sub>| over ads, normalized to sum to one.</p>
+    </div></div>
+  </details>
+  <details>
+    <summary>How this page was built</summary>
+    <div class="dbody"><div>
+    <p>Static HTML, no libraries. Typography and table behaviour come from records of a design registry (tabular numerals, heading kerning, table row highlight, scroll-safe tables, smooth disclosure, reading-position marker) checked against that registry&rsquo;s antipattern list before release. Fonts load from Google Fonts with system fallbacks; the page works offline in the fallback faces.</p>
+    </div></div>
+  </details>
+
+  <h3>A.4&ndash;A.10 Code and results, as run <span class="tag solid">Solid</span></h3>
+  <p class="note">Files that produced the numbers above; the repository holds them as separate files (same values; JSON indentation differs, and poc_omni.py there keeps one explanatory comment line). The defects found by the reviews are in this code by design; 8.0 lists what a second run would change. Each block has a copy button.</p>
+  <details class="codeblk">
+    <summary>A.4 results_B.json: section 1 output, as produced <span class="meta">130 lines, 3,414 bytes</span></summary>
+    <div class="dbody"><div>
+    <p class="note">Includes the unlabeled interaction_* fields discussed in 6.5 and the conflict fractions over 20 draws (19 distinct pairs, 1.3).</p>
+    <div class="codebar"><button type="button" class="copybtn" data-target="code-A-4">Copy</button></div>
+    <pre id="code-A-4"><code>{
+ &quot;n&quot;: 22,
+ &quot;n_R&quot;: 10,
+ &quot;model&quot;: &quot;nvidia/omni-embed-nemotron-3b&quot;,
+ &quot;conditions&quot;: [
+  &quot;V&quot;,
+  &quot;P&quot;,
+  &quot;T&quot;,
+  &quot;VP&quot;,
+  &quot;VT&quot;,
+  &quot;PT&quot;,
+  &quot;VPT&quot;,
+  &quot;A&quot;,
+  &quot;VA&quot;
+ ],
+ &quot;auc&quot;: {
+  &quot;anchor&quot;: {
+   &quot;V&quot;: 0.7333333333333334,
+   &quot;P&quot;: 0.7083333333333334,
+   &quot;T&quot;: 0.7166666666666667,
+   &quot;VP&quot;: 0.7083333333333334,
+   &quot;VT&quot;: 0.7000000000000001,
+   &quot;PT&quot;: 0.6833333333333333,
+   &quot;VPT&quot;: 0.7000000000000001,
+   &quot;A&quot;: 0.6833333333333333,
+   &quot;VA&quot;: 0.7083333333333334
+  },
+  &quot;proto&quot;: {
+   &quot;V&quot;: 0.9916666666666666,
+   &quot;P&quot;: 0.925,
+   &quot;T&quot;: 0.9,
+   &quot;VP&quot;: 1.0,
+   &quot;VT&quot;: 1.0,
+   &quot;PT&quot;: 0.9333333333333333,
+   &quot;VPT&quot;: 1.0,
+   &quot;A&quot;: 0.9333333333333333,
+   &quot;VA&quot;: 1.0
+  },
+  &quot;logistic_loo&quot;: {
+   &quot;V&quot;: 0.8666666666666667,
+   &quot;P&quot;: 0.6583333333333333,
+   &quot;T&quot;: 0.6666666666666666,
+   &quot;VP&quot;: 0.875,
+   &quot;VT&quot;: 0.8833333333333333,
+   &quot;PT&quot;: 0.6833333333333333,
+   &quot;VPT&quot;: 0.8916666666666667,
+   &quot;A&quot;: 0.6666666666666667,
+   &quot;VA&quot;: 0.8833333333333333
+  }
+ },
+ &quot;shapley&quot;: {
+  &quot;anchor&quot;: {
+   &quot;share_of_abs_contribution&quot;: {
+    &quot;V&quot;: 0.43950197982550526,
+    &quot;P&quot;: 0.28727144827087037,
+    &quot;T&quot;: 0.2732265719036245
+   },
+   &quot;auc_phi_vs_party&quot;: {
+    &quot;V&quot;: 0.6416666666666667,
+    &quot;P&quot;: 0.6583333333333333,
+    &quot;T&quot;: 0.65
+   },
+   &quot;mean_phi_R&quot;: {
+    &quot;V&quot;: 0.22372619570443955,
+    &quot;P&quot;: 0.1346453250517173,
+    &quot;T&quot;: 0.12558190957428933
+   },
+   &quot;mean_phi_D&quot;: {
+    &quot;V&quot;: -0.18643849642036636,
+    &quot;P&quot;: -0.11220443754309778,
+    &quot;T&quot;: -0.10465159131190775
+   },
+   &quot;interaction_mean_abs&quot;: 1.4482014802552137,
+   &quot;interaction_auc_vs_party&quot;: 0.225
+  },
+  &quot;proto&quot;: {
+   &quot;share_of_abs_contribution&quot;: {
+    &quot;V&quot;: 0.4303629029066916,
+    &quot;P&quot;: 0.281699801919223,
+    &quot;T&quot;: 0.2879372951740854
+   },
+   &quot;auc_phi_vs_party&quot;: {
+    &quot;V&quot;: 0.8916666666666666,
+    &quot;P&quot;: 0.8833333333333333,
+    &quot;T&quot;: 0.8916666666666666
+   },
+   &quot;mean_phi_R&quot;: {
+    &quot;V&quot;: 0.40300823654795603,
+    &quot;P&quot;: 0.2634130708279729,
+    &quot;T&quot;: 0.26755596957051475
+   },
+   &quot;mean_phi_D&quot;: {
+    &quot;V&quot;: -0.33584019712329655,
+    &quot;P&quot;: -0.21951089235664403,
+    &quot;T&quot;: -0.22296330797542918
+   },
+   &quot;interaction_mean_abs&quot;: 1.5687250533688901,
+   &quot;interaction_auc_vs_party&quot;: 0.06666666666666668
+  }
+ },
+ &quot;modality_gap_norm&quot;: {
+  &quot;V-T&quot;: 0.7019284910535292,
+  &quot;P-T&quot;: 0.3923650901683346,
+  &quot;V-P&quot;: 0.6191675156701028,
+  &quot;A-P&quot;: 0.17019467786109443
+ },
+ &quot;conflict&quot;: {
+  &quot;V_over_P&quot;: {
+   &quot;first_source_wins&quot;: 1.0,
+   &quot;n_pairs&quot;: 20
+  },
+  &quot;V_over_T&quot;: {
+   &quot;first_source_wins&quot;: 1.0,
+   &quot;n_pairs&quot;: 20
+  },
+  &quot;P_over_T&quot;: {
+   &quot;first_source_wins&quot;: 0.55,
+   &quot;n_pairs&quot;: 20
+  }
+ },
+ &quot;runtime_s&quot;: 212,
+ &quot;deviations&quot;: [
+  &quot;n = 22 ads (10 R / 12 D) from official 2024 candidate channels; heuristic, not inferential&quot;,
+  &quot;prosody channel = low-pass 400 Hz + loudnorm (words unintelligible; pitch, rhythm, energy kept); music bass survives&quot;,
+  &quot;video sampled at 1 fps, max 64 frames, low resolution (max_pixels 64*28*28) to fit 16 GB&quot;,
+  &quot;every condition carries the constant prefix &#x27;passage: &#x27; so that conditions differ only by channel content&quot;,
+  &quot;LOO prototype score has the usual leave-one-out mean bias (uniform across ads); anchors are hand-written&quot;,
+  &quot;AUCs on 22 ads have SE ~ 0.12; Shapley shares are descriptive&quot;
+ ]
+}</code></pre>
+    </div></div>
+  </details>
+  <details class="codeblk">
+    <summary>A.5 results.json: section 2 output, as produced <span class="meta">193 lines, 3,397 bytes</span></summary>
+    <div class="dbody"><div>
+    <p class="note">AUCs with global centering and the non-nested stacked model (2, 8.0); concept differences R minus D; deviations list written by the script.</p>
+    <div class="codebar"><button type="button" class="copybtn" data-target="code-A-5">Copy</button></div>
+    <pre id="code-A-5"><code>{
+ &quot;n&quot;: 22,
+ &quot;n_R&quot;: 10,
+ &quot;auc_loo&quot;: {
+  &quot;image&quot;: 0.6583333333333333,
+  &quot;text&quot;: 0.675,
+  &quot;stacked&quot;: 0.45833333333333337
+ },
+ &quot;corr_image_text_pred&quot;: -0.03599137194567069,
+ &quot;modality_gap_norm&quot;: {
+  &quot;before&quot;: 1.1061378717422485,
+  &quot;after&quot;: 0.10089539736509323
+ },
+ &quot;exposure_auc&quot;: {
+  &quot;3&quot;: {
+   &quot;image&quot;: 0.625,
+   &quot;text&quot;: 0.48333333333333334
+  },
+  &quot;6&quot;: {
+   &quot;image&quot;: 0.6416666666666667,
+   &quot;text&quot;: 0.43333333333333335
+  },
+  &quot;12&quot;: {
+   &quot;image&quot;: 0.5833333333333334,
+   &quot;text&quot;: 0.5249999999999999
+  },
+  &quot;24&quot;: {
+   &quot;image&quot;: 0.6666666666666667,
+   &quot;text&quot;: 0.6000000000000001
+  },
+  &quot;45&quot;: {
+   &quot;image&quot;: 0.6166666666666667,
+   &quot;text&quot;: 0.65
+  }
+ },
+ &quot;splice_reconstruction_cos&quot;: {
+  &quot;image&quot;: 0.13777777623425339,
+  &quot;text&quot;: 0.25164191857094037
+ },
+ &quot;concepts_image&quot;: {
+  &quot;R_minus_D&quot;: [
+   [
+    &quot;rally&quot;,
+    0.016
+   ],
+   [
+    &quot;crowd&quot;,
+    0.0115
+   ],
+   [
+    &quot;freedom&quot;,
+    0.0102
+   ],
+   [
+    &quot;patriotism&quot;,
+    0.0073
+   ],
+   [
+    &quot;economy&quot;,
+    0.0052
+   ],
+   [
+    &quot;small business&quot;,
+    0.0048
+   ],
+   [
+    &quot;city&quot;,
+    0.0035
+   ],
+   [
+    &quot;safety&quot;,
+    0.0031
+   ]
+  ],
+  &quot;D_minus_R&quot;: [
+   [
+    &quot;healthcare&quot;,
+    0.0204
+   ],
+   [
+    &quot;hospital&quot;,
+    0.0143
+   ],
+   [
+    &quot;countryside&quot;,
+    0.0132
+   ],
+   [
+    &quot;love&quot;,
+    0.0116
+   ],
+   [
+    &quot;education&quot;,
+    0.0094
+   ],
+   [
+    &quot;police&quot;,
+    0.0093
+   ],
+   [
+    &quot;corruption&quot;,
+    0.0084
+   ],
+   [
+    &quot;handshake&quot;,
+    0.0076
+   ]
+  ]
+ },
+ &quot;concepts_text&quot;: {
+  &quot;R_minus_D&quot;: [
+   [
+    &quot;unity&quot;,
+    0.0423
+   ],
+   [
+    &quot;strength&quot;,
+    0.0306
+   ],
+   [
+    &quot;pride&quot;,
+    0.0207
+   ],
+   [
+    &quot;freedom&quot;,
+    0.0186
+   ],
+   [
+    &quot;patriotism&quot;,
+    0.0145
+   ],
+   [
+    &quot;hope&quot;,
+    0.0121
+   ],
+   [
+    &quot;disgust&quot;,
+    0.0096
+   ],
+   [
+    &quot;china&quot;,
+    0.0086
+   ]
+  ],
+  &quot;D_minus_R&quot;: [
+   [
+    &quot;abortion&quot;,
+    0.0633
+   ],
+   [
+    &quot;healthcare&quot;,
+    0.0303
+   ],
+   [
+    &quot;military&quot;,
+    0.0235
+   ],
+   [
+    &quot;hospital&quot;,
+    0.0137
+   ],
+   [
+    &quot;police&quot;,
+    0.0091
+   ],
+   [
+    &quot;love&quot;,
+    0.0069
+   ],
+   [
+    &quot;taxes&quot;,
+    0.005
+   ],
+   [
+    &quot;small business&quot;,
+    0.0047
+   ]
+  ]
+ },
+ &quot;mean_active_concepts&quot;: {
+  &quot;image&quot;: 4.818181818181818,
+  &quot;text&quot;: 4.363636363636363
+ },
+ &quot;deviations&quot;: [
+  &quot;n ~ 20 ads from official candidate channels vs 15,427 labeled ads (2016-2020)&quot;,
+  &quot;logistic regression + leave-one-out CV instead of neural net + 80/20 split&quot;,
+  &quot;transcripts from faster-whisper large-v3 (YouTube auto-captions only as fallback); ads without speech get a constant empty-string text embedding&quot;,
+  &quot;R ads = Trump 2024 channel, D ads = Harris/Biden 2024 channels (same era; sponsor = candidate)&quot;,
+  &quot;50 concepts instead of 160; sparsity tuned to ~8 active concepts, not matched reconstruction&quot;,
+  &quot;empty transcript chunks dropped from the text mean&quot;,
+  &quot;360p frames; exposure curve uses prefix means with the full-length classifier (LOO)&quot;
+ ]
+}</code></pre>
+    </div></div>
+  </details>
+  <details class="codeblk">
+    <summary>A.6 manifest.csv: the 22 ads (YouTube ids) <span class="meta">24 lines, 993 bytes</span></summary>
+    <div class="dbody"><div>
+    <p class="note">Prefix D_ = Harris or Biden channel, R24_ = Trump channel; the id after the prefix is the YouTube video id.</p>
+    <div class="codebar"><button type="button" class="copybtn" data-target="code-A-6">Copy</button></div>
+    <pre id="code-A-6"><code>id,label,video,subs
+D_2x72eSfZ7Ao,D,D_2x72eSfZ7Ao.mp4,D_2x72eSfZ7Ao.en.vtt
+D_60Hyc3tFk5c,D,D_60Hyc3tFk5c.mp4,
+D_9fn2vm_Qrpo,D,D_9fn2vm_Qrpo.mp4,D_9fn2vm_Qrpo.en.vtt
+D_Cm9VdVkYCLw,D,D_Cm9VdVkYCLw.mp4,D_Cm9VdVkYCLw.en.vtt
+D_JB-8dWtdRuk,D,D_JB-8dWtdRuk.mp4,
+D_L2HRvz1vvc8,D,D_L2HRvz1vvc8.mp4,D_L2HRvz1vvc8.en.vtt
+D_Xmz-AEhSm_A,D,D_Xmz-AEhSm_A.mp4,
+D__v_4IgeVQ8M,D,D__v_4IgeVQ8M.mp4,D__v_4IgeVQ8M.en.vtt
+D_cgCoAka-cSo,D,D_cgCoAka-cSo.mp4,D_cgCoAka-cSo.en.vtt
+D_eGPCopBNieM,D,D_eGPCopBNieM.mp4,
+D_t9suRUZGIdg,D,D_t9suRUZGIdg.mp4,
+D_zARiKNKWDZs,D,D_zARiKNKWDZs.mp4,D_zARiKNKWDZs.en.vtt
+R24_A46L7BumIjY,R,R24_A46L7BumIjY.mp4,
+R24_AFcrA3EeVp4,R,R24_AFcrA3EeVp4.mp4,
+R24_FLY4cI77_FU,R,R24_FLY4cI77_FU.mp4,
+R24_T5W_Bzrv4Tk,R,R24_T5W_Bzrv4Tk.mp4,
+R24_YY5BPigFKgs,R,R24_YY5BPigFKgs.mp4,
+R24_i6Ge7ealpZk,R,R24_i6Ge7ealpZk.mp4,
+R24_kwbBxC8lIw8,R,R24_kwbBxC8lIw8.mp4,
+R24_n5LDxSrrI1k,R,R24_n5LDxSrrI1k.mp4,
+R24_uP08OUoVj0o,R,R24_uP08OUoVj0o.mp4,
+R24_z1Awk3PSIJo,R,R24_z1Awk3PSIJo.mp4,
+</code></pre>
+    </div></div>
+  </details>
+  <details class="codeblk">
+    <summary>A.7 poc_omni.py: section 1, as run <span class="meta">222 lines, 10,406 bytes</span></summary>
+    <div class="dbody"><div>
+    <p class="note">Conditions, anchors, scores, exact Shapley, conflict test. Contains the defects listed in 8.0: pairs drawn with replacement, prototypes including the donors.</p>
+    <div class="codebar"><button type="button" class="copybtn" data-target="code-A-7">Copy</button></div>
+    <pre id="code-A-7"><code>#!/usr/bin/env python3
+&quot;&quot;&quot;Part B: omni-embedding channel decomposition on the PoC ads (nvidia/omni-embed-nemotron-3b).
+
+Conditions per ad (one omni embedder, content list = subset of channels):
+  V (muted video), P (prosody wav, low-pass 400 Hz), T (transcript), VP, VT, PT, VPT -&gt; 3-player Shapley
+  A (raw audio incl. words), VA (original ad)                                        -&gt; leakage references
+Scores per condition:
+  anchor : zero-shot, mean cos to R text anchors - mean cos to D text anchors (cross-modal, CLIP-style)
+  proto  : leave-one-out prototype, cos(e_i, mean_R(-i) - mean_D(-i))  (within-condition, modality-gap-free)
+  auc_loo: leave-one-out logistic regression AUC (informativeness)
+Shapley: exact 3-player values on z-scored per-condition scores, v(empty) = 0; interaction = v(VPT)-v(V)-v(P)-v(T).
+Conflict test: cross-party composites V_i+P_j, V_i+T_j, P_i+T_j; which source&#x27;s party the composite follows.
+Outputs: out/omni_emb.json (cache), out/results_B.json
+&quot;&quot;&quot;
+import csv, itertools, json, os, random, time
+import numpy as np
+import torch
+import torch.nn.functional as F
+from transformers import AutoModel, AutoProcessor
+from qwen_omni_utils import process_mm_info
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import roc_auc_score
+
+ROOT = os.path.dirname(os.path.abspath(__file__))
+DATA, OUT = os.path.join(ROOT, &quot;data&quot;), os.path.join(ROOT, &quot;out&quot;)
+VAR, TR = os.path.join(OUT, &quot;var&quot;), os.path.join(OUT, &quot;transcripts&quot;)
+CACHE = os.path.join(OUT, &quot;omni_emb.json&quot;)
+MODEL = &quot;nvidia/omni-embed-nemotron-3b&quot;
+PROC_PATH = os.path.join(ROOT, &quot;model_local&quot;)
+VIDEO_KW = {&quot;min_pixels&quot;: 32 * 14 * 14, &quot;max_pixels&quot;: 64 * 28 * 28, &quot;use_audio_in_video&quot;: False}
+FPS, MAX_FRAMES = 1.0, 64
+PLAYERS = [&quot;V&quot;, &quot;P&quot;, &quot;T&quot;]
+CONDS = [&quot;V&quot;, &quot;P&quot;, &quot;T&quot;, &quot;VP&quot;, &quot;VT&quot;, &quot;PT&quot;, &quot;VPT&quot;, &quot;A&quot;, &quot;VA&quot;]
+ANCHORS = {
+    &quot;R&quot;: [&quot;a Republican campaign ad&quot;, &quot;a political ad supporting Donald Trump&quot;,
+          &quot;a conservative Republican political advertisement&quot;, &quot;a Trump 2024 campaign video&quot;],
+    &quot;D&quot;: [&quot;a Democratic campaign ad&quot;, &quot;a political ad supporting Kamala Harris and Joe Biden&quot;,
+          &quot;a liberal Democratic political advertisement&quot;, &quot;a Harris 2024 campaign video&quot;],
+}
+N_SWAPS_PER_DIRECTION = 10
+SEED = 0
+SHAPLEY_W = {0: 1 / 3, 1: 1 / 6, 2: 1 / 3}  # |S|!(n-|S|-1)!/n! for n = 3
+DEVIATIONS = [
+    &quot;n = 22 ads (10 R / 12 D) from official 2024 candidate channels; heuristic, not inferential&quot;,
+    &quot;prosody channel = low-pass 400 Hz + loudnorm (words unintelligible; pitch, rhythm, energy kept); music bass survives&quot;,
+    &quot;video sampled at 1 fps, max 64 frames, low resolution (max_pixels 64*28*28) to fit 16 GB&quot;,
+    &quot;every condition carries the constant prefix &#x27;passage: &#x27; so that conditions differ only by channel content&quot;,
+    &quot;LOO prototype score has the usual leave-one-out mean bias (uniform across ads); anchors are hand-written&quot;,
+    &quot;AUCs on 22 ads have SE ~ 0.12; Shapley shares are descriptive&quot;,
+]
+
+
+def transcript(vid):
+    p = os.path.join(TR, vid + &quot;.json&quot;)
+    return json.load(open(p))[&quot;text&quot;] if os.path.exists(p) else &quot;&quot;
+
+
+def content(vid, cond, text=None):
+    c = []
+    if &quot;V&quot; in cond:
+        c.append({&quot;type&quot;: &quot;video&quot;, &quot;video&quot;: os.path.join(VAR, f&quot;{vid}_V.mp4&quot;), &quot;fps&quot;: FPS, &quot;max_frames&quot;: MAX_FRAMES})
+    if &quot;P&quot; in cond:
+        c.append({&quot;type&quot;: &quot;audio&quot;, &quot;audio&quot;: os.path.join(VAR, f&quot;{vid}_P.wav&quot;)})
+    if &quot;A&quot; in cond:
+        c.append({&quot;type&quot;: &quot;audio&quot;, &quot;audio&quot;: os.path.join(OUT, &quot;audio&quot;, f&quot;{vid}.wav&quot;)})
+    t = text if text is not None else (transcript(vid) if &quot;T&quot; in cond else &quot;&quot;)
+    c.append({&quot;type&quot;: &quot;text&quot;, &quot;text&quot;: &quot;passage: &quot; + t})
+    return c
+
+
+def load():
+    m = AutoModel.from_pretrained(MODEL, torch_dtype=torch.bfloat16, attn_implementation=&quot;sdpa&quot;,
+                                  trust_remote_code=True).to(&quot;cuda&quot;).eval()
+    return m, AutoProcessor.from_pretrained(PROC_PATH, trust_remote_code=True)
+
+
+@torch.no_grad()
+def embed(m, p, cont):
+    torch.cuda.empty_cache()
+    docs = [{&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: cont}]
+    text = p.apply_chat_template(docs, add_generation_prompt=False, tokenize=False)
+    audio, images, videos = process_mm_info(docs, use_audio_in_video=False)
+    batch = p(text=text, images=images, videos=videos, audio=audio, return_tensors=&quot;pt&quot;,
+              text_kwargs={&quot;truncation&quot;: True, &quot;padding&quot;: True, &quot;max_length&quot;: 204800},
+              videos_kwargs=VIDEO_KW, audio_kwargs={&quot;max_length&quot;: 2048000})
+    batch = {k: v.to(m.device) for k, v in batch.items()}
+    h = m(**batch, output_hidden_states=True).hidden_states[-1]
+    mask = batch[&quot;attention_mask&quot;]
+    e = h.masked_fill(~mask[..., None].bool(), 0.0).sum(1) / mask.sum(1)[..., None]
+    return F.normalize(e.float(), dim=-1)[0].cpu().numpy()
+
+
+def unit(x):
+    return x / np.clip(np.linalg.norm(x, axis=-1, keepdims=True), 1e-8, None)
+
+
+def zscore(x):
+    s = x.std()
+    return (x - x.mean()) / (s if s &gt; 1e-8 else 1.0)
+
+
+def loo_proba(X, y, C=1.0):
+    p = np.zeros(len(y))
+    for i in range(len(y)):
+        idx = np.arange(len(y)) != i
+        p[i] = LogisticRegression(C=C, max_iter=2000).fit(X[idx], y[idx]).predict_proba(X[i:i + 1])[0, 1]
+    return p
+
+
+def proto_loo(E, y):
+    s = np.zeros(len(y))
+    for i in range(len(y)):
+        idx = np.arange(len(y)) != i
+        proto = E[idx &amp; (y == 1)].mean(0) - E[idx &amp; (y == 0)].mean(0)
+        s[i] = E[i] @ unit(proto)
+    return s
+
+
+def shapley(v):
+    &quot;&quot;&quot;v: dict cond -&gt; array over ads for V,P,T,VP,VT,PT,VPT. Exact 3-player Shapley values.&quot;&quot;&quot;
+    phi = {}
+    for c in PLAYERS:
+        others = [o for o in PLAYERS if o != c]
+        tot = 0.0
+        for k in range(3):
+            for S in itertools.combinations(others, k):
+                key_s = &quot;&quot;.join(x for x in PLAYERS if x in S)
+                key_sc = &quot;&quot;.join(x for x in PLAYERS if x in S or x == c)
+                tot = tot + SHAPLEY_W[k] * (v[key_sc] - (v[key_s] if key_s else 0.0))
+        phi[c] = tot
+    return phi
+
+
+def main():
+    t0 = time.time()
+    rows = list(csv.DictReader(open(os.path.join(DATA, &quot;manifest.csv&quot;))))
+    ids = [r[&quot;id&quot;] for r in rows]
+    y = np.array([1 if r[&quot;label&quot;].upper().startswith(&quot;R&quot;) else 0 for r in rows])
+    m, p = load()
+    print(f&quot;model loaded {time.time() - t0:.0f}s, vram {torch.cuda.memory_allocated() / 1e9:.1f} GB&quot;, flush=True)
+
+    cache = json.load(open(CACHE)) if os.path.exists(CACHE) else {}
+
+    def get(key, cont):
+        if key not in cache:
+            cache[key] = embed(m, p, cont).tolist()
+            json.dump(cache, open(CACHE, &quot;w&quot;))
+        return np.array(cache[key])
+
+    # anchors as queries
+    A = {k: unit(np.array([get(f&quot;anchor:{k}:{i}&quot;, [{&quot;type&quot;: &quot;text&quot;, &quot;text&quot;: &quot;query: &quot; + a}])
+                            for i, a in enumerate(v)])) for k, v in ANCHORS.items()}
+    # ad embeddings per condition
+    E = {c: [] for c in CONDS}
+    for n, vid in enumerate(ids):
+        for c in CONDS:
+            E[c].append(get(f&quot;{vid}:{c}&quot;, content(vid, c)))
+        print(f&quot;  [{n + 1}/{len(ids)}] {vid} done, {time.time() - t0:.0f}s&quot;, flush=True)
+    E = {c: unit(np.array(v)) for c, v in E.items()}
+
+    # per-condition scores
+    scores = {&quot;anchor&quot;: {}, &quot;proto&quot;: {}}
+    auc = {&quot;anchor&quot;: {}, &quot;proto&quot;: {}, &quot;logistic_loo&quot;: {}}
+    for c in CONDS:
+        sa = (E[c] @ A[&quot;R&quot;].T).mean(1) - (E[c] @ A[&quot;D&quot;].T).mean(1)
+        sp = proto_loo(E[c], y)
+        scores[&quot;anchor&quot;][c], scores[&quot;proto&quot;][c] = sa, sp
+        auc[&quot;anchor&quot;][c] = float(roc_auc_score(y, sa))
+        auc[&quot;proto&quot;][c] = float(roc_auc_score(y, sp))
+        auc[&quot;logistic_loo&quot;][c] = float(roc_auc_score(y, loo_proba(E[c], y)))
+
+    # Shapley on z-scored scores
+    shap = {}
+    for kind in (&quot;anchor&quot;, &quot;proto&quot;):
+        v = {c: zscore(scores[kind][c]) for c in [&quot;V&quot;, &quot;P&quot;, &quot;T&quot;, &quot;VP&quot;, &quot;VT&quot;, &quot;PT&quot;, &quot;VPT&quot;]}
+        phi = shapley(v)
+        assert np.allclose(phi[&quot;V&quot;] + phi[&quot;P&quot;] + phi[&quot;T&quot;], v[&quot;VPT&quot;], atol=1e-6)
+        inter = v[&quot;VPT&quot;] - v[&quot;V&quot;] - v[&quot;P&quot;] - v[&quot;T&quot;]
+        mag = {c: float(np.abs(phi[c]).mean()) for c in PLAYERS}
+        tot = sum(mag.values())
+        shap[kind] = {
+            &quot;share_of_abs_contribution&quot;: {c: mag[c] / tot for c in PLAYERS},
+            &quot;auc_phi_vs_party&quot;: {c: float(roc_auc_score(y, phi[c])) for c in PLAYERS},
+            &quot;mean_phi_R&quot;: {c: float(phi[c][y == 1].mean()) for c in PLAYERS},
+            &quot;mean_phi_D&quot;: {c: float(phi[c][y == 0].mean()) for c in PLAYERS},
+            &quot;interaction_mean_abs&quot;: float(np.abs(inter).mean()),
+            &quot;interaction_auc_vs_party&quot;: float(roc_auc_score(y, inter)),
+        }
+
+    # modality gap inside the omni model: distance between condition means
+    means = {c: E[c].mean(0) for c in CONDS}
+    gap = {f&quot;{a}-{b}&quot;: float(np.linalg.norm(means[a] - means[b])) for a, b in [(&quot;V&quot;, &quot;T&quot;), (&quot;P&quot;, &quot;T&quot;), (&quot;V&quot;, &quot;P&quot;), (&quot;A&quot;, &quot;P&quot;)]}
+
+    # conflict test: cross-party composites, scored with full-sample prototypes of the joint condition
+    rng = random.Random(SEED)
+    R, D = [i for i in range(len(ids)) if y[i] == 1], [i for i in range(len(ids)) if y[i] == 0]
+    pairs = [(rng.choice(R), rng.choice(D)) for _ in range(N_SWAPS_PER_DIRECTION)] + \
+            [(rng.choice(D), rng.choice(R)) for _ in range(N_SWAPS_PER_DIRECTION)]
+    protos = {c: unit(E[c][y == 1].mean(0) - E[c][y == 0].mean(0)) for c in (&quot;VP&quot;, &quot;VT&quot;, &quot;PT&quot;)}
+    conflict = {}
+    for name, cond, build in [
+        (&quot;V_over_P&quot;, &quot;VP&quot;, lambda i, j: content(ids[i], &quot;V&quot;)[:1] + content(ids[j], &quot;P&quot;)),
+        (&quot;V_over_T&quot;, &quot;VT&quot;, lambda i, j: content(ids[i], &quot;V&quot;)[:1] + [{&quot;type&quot;: &quot;text&quot;, &quot;text&quot;: &quot;passage: &quot; + transcript(ids[j])}]),
+        (&quot;P_over_T&quot;, &quot;PT&quot;, lambda i, j: content(ids[i], &quot;P&quot;)[:1] + [{&quot;type&quot;: &quot;text&quot;, &quot;text&quot;: &quot;passage: &quot; + transcript(ids[j])}]),
+    ]:
+        wins = []
+        for i, j in pairs:
+            e = unit(get(f&quot;swap:{name}:{ids[i]}:{ids[j]}&quot;, build(i, j)))
+            pred = 1 if e @ protos[cond] &gt; 0 else 0
+            wins.append(int(pred == y[i]))  # first source&#x27;s party wins?
+        conflict[name] = {&quot;first_source_wins&quot;: float(np.mean(wins)), &quot;n_pairs&quot;: len(pairs)}
+
+    res = {&quot;n&quot;: len(ids), &quot;n_R&quot;: int(y.sum()), &quot;model&quot;: MODEL, &quot;conditions&quot;: CONDS,
+           &quot;auc&quot;: auc, &quot;shapley&quot;: shap, &quot;modality_gap_norm&quot;: gap, &quot;conflict&quot;: conflict,
+           &quot;runtime_s&quot;: round(time.time() - t0), &quot;deviations&quot;: DEVIATIONS}
+    json.dump(res, open(os.path.join(OUT, &quot;results_B.json&quot;), &quot;w&quot;), indent=2)
+    print(json.dumps({k: v for k, v in res.items() if k not in (&quot;deviations&quot;, &quot;conditions&quot;)}, indent=1))
+
+
+if __name__ == &quot;__main__&quot;:
+    main()
+</code></pre>
+    </div></div>
+  </details>
+  <details class="codeblk">
+    <summary>A.8 prep_b.py: channel preparation, as run <span class="meta">46 lines, 2,012 bytes</span></summary>
+    <div class="dbody"><div>
+    <p class="note">ffmpeg filters for the muted-video and filtered-audio conditions; Whisper word transcripts.</p>
+    <div class="codebar"><button type="button" class="copybtn" data-target="code-A-8">Copy</button></div>
+    <pre id="code-A-8"><code>#!/usr/bin/env python3
+&quot;&quot;&quot;Part B, step 1: separate each ad into clean channels.
+
+V  : muted video                        out/var/&lt;id&gt;_V.mp4
+P  : prosody audio (low-pass 400 Hz)    out/var/&lt;id&gt;_P.wav   pitch/rhythm/energy kept, words unintelligible
+VP : video + prosody audio              out/var/&lt;id&gt;_VP.mp4
+A  : raw audio (speech + music)         out/audio/&lt;id&gt;.wav   (from poc_clip.extract_audio)
+T  : transcript (faster-whisper words)  out/transcripts/&lt;id&gt;.json
+&quot;&quot;&quot;
+import csv, json, os, subprocess
+from poc_clip import DATA, OUT, extract_audio, extract_frames, transcribe
+
+VAR, TR = os.path.join(OUT, &quot;var&quot;), os.path.join(OUT, &quot;transcripts&quot;)
+LOWPASS = &quot;lowpass=f=400,lowpass=f=400,loudnorm&quot;  # two poles -&gt; steeper roll-off; loudnorm equalises level
+
+
+def sh(cmd):
+    subprocess.run(cmd, capture_output=True, text=True, check=True)
+
+
+def main():
+    os.makedirs(VAR, exist_ok=True)
+    os.makedirs(TR, exist_ok=True)
+    rows = list(csv.DictReader(open(os.path.join(DATA, &quot;manifest.csv&quot;))))
+    for r in rows:
+        vid, src = r[&quot;id&quot;], os.path.join(DATA, r[&quot;video&quot;])
+        extract_frames(vid, src)
+        wav = extract_audio(vid, src)
+        v, p, vp = (os.path.join(VAR, f&quot;{vid}_{k}&quot;) for k in (&quot;V.mp4&quot;, &quot;P.wav&quot;, &quot;VP.mp4&quot;))
+        if not os.path.exists(v):
+            sh([&quot;ffmpeg&quot;, &quot;-v&quot;, &quot;error&quot;, &quot;-y&quot;, &quot;-i&quot;, src, &quot;-an&quot;, &quot;-c:v&quot;, &quot;copy&quot;, v])
+        if not os.path.exists(p):
+            sh([&quot;ffmpeg&quot;, &quot;-v&quot;, &quot;error&quot;, &quot;-y&quot;, &quot;-i&quot;, wav, &quot;-af&quot;, LOWPASS, &quot;-ac&quot;, &quot;1&quot;, &quot;-ar&quot;, &quot;16000&quot;, p])
+        if not os.path.exists(vp):
+            sh([&quot;ffmpeg&quot;, &quot;-v&quot;, &quot;error&quot;, &quot;-y&quot;, &quot;-i&quot;, v, &quot;-i&quot;, p, &quot;-map&quot;, &quot;0:v&quot;, &quot;-map&quot;, &quot;1:a&quot;,
+                &quot;-c:v&quot;, &quot;copy&quot;, &quot;-c:a&quot;, &quot;aac&quot;, &quot;-shortest&quot;, vp])
+        tj = os.path.join(TR, vid + &quot;.json&quot;)
+        if not os.path.exists(tj):
+            words = transcribe(wav)
+            json.dump({&quot;words&quot;: words, &quot;text&quot;: &quot; &quot;.join(w for _, w in words)}, open(tj, &quot;w&quot;))
+        print(f&quot;{vid}: ok ({len(json.load(open(tj))[&#x27;words&#x27;])} words)&quot;)
+
+
+if __name__ == &quot;__main__&quot;:
+    main()
+</code></pre>
+    </div></div>
+  </details>
+  <details class="codeblk">
+    <summary>A.9 poc_clip.py: section 2, as run <span class="meta">278 lines, 12,158 bytes</span></summary>
+    <div class="dbody"><div>
+    <p class="note">Contains the defects listed in 8.0: global centering, non-nested stacking, a sparsity search without an attainment check.</p>
+    <div class="codebar"><button type="button" class="copybtn" data-target="code-A-9">Copy</button></div>
+    <pre id="code-A-9"><code>#!/usr/bin/env python3
+&quot;&quot;&quot;PoC mini-replication of Ciccarone (2026), &quot;An Image is Worth 1000 Words? Partisanship and
+Attention in Videos&quot;, Sections 2.1-2.3, 3 (exposure) and 4.1 (SpLICE concepts).
+
+Pipeline: frame every 3 s + matched transcript chunk -&gt; CLIP ViT-B/32 (512-d) -&gt; per-ad mean
+-&gt; per-modality mean-centering (modality gap, Liang et al. 2022) -&gt; per-modality classifier
++ stacked model -&gt; exposure curve (prefix of k seconds) -&gt; SpLICE-lite concept decomposition.
+
+Input : data/manifest.csv with columns id,label,video,subs (label in {R,D}; paths relative to data/)
+Output: out/results.json, out/embeddings.npz, out/frames/&lt;id&gt;/, out/audio/&lt;id&gt;.wav (for part B)
+&quot;&quot;&quot;
+import csv, glob, json, os, re, subprocess, sys
+import numpy as np
+import torch
+from PIL import Image
+from transformers import CLIPModel, CLIPProcessor
+from sklearn.linear_model import Lasso, LogisticRegression
+from sklearn.metrics import roc_auc_score
+
+ROOT = os.path.dirname(os.path.abspath(__file__))
+DATA, OUT = os.path.join(ROOT, &quot;data&quot;), os.path.join(ROOT, &quot;out&quot;)
+STEP = 3.0  # paper: one frame every three seconds, transcript cut into as many chunks
+EXPOSURES = [3, 6, 12, 24, 45]  # seconds of prefix, for the attention/exposure curve
+CONCEPTS = [
+    # topics
+    &quot;immigration&quot;, &quot;border&quot;, &quot;economy&quot;, &quot;jobs&quot;, &quot;inflation&quot;, &quot;taxes&quot;, &quot;healthcare&quot;, &quot;abortion&quot;,
+    &quot;guns&quot;, &quot;crime&quot;, &quot;police&quot;, &quot;climate&quot;, &quot;education&quot;, &quot;military&quot;, &quot;veterans&quot;, &quot;corruption&quot;,
+    &quot;democracy&quot;, &quot;freedom&quot;, &quot;family&quot;, &quot;workers&quot;, &quot;farmers&quot;, &quot;small business&quot;, &quot;energy&quot;, &quot;china&quot;,
+    # emotions / affect
+    &quot;fear&quot;, &quot;anger&quot;, &quot;disgust&quot;, &quot;sadness&quot;, &quot;hope&quot;, &quot;joy&quot;, &quot;pride&quot;, &quot;empathy&quot;, &quot;love&quot;, &quot;threat&quot;,
+    &quot;safety&quot;, &quot;strength&quot;, &quot;unity&quot;, &quot;patriotism&quot;,
+    # visual scene words
+    &quot;flag&quot;, &quot;crowd&quot;, &quot;rally&quot;, &quot;factory&quot;, &quot;hospital&quot;, &quot;children&quot;, &quot;elderly&quot;, &quot;soldier&quot;, &quot;protest&quot;,
+    &quot;city&quot;, &quot;countryside&quot;, &quot;handshake&quot;,
+]
+DEVIATIONS = [
+    &quot;n ~ 20 ads from official candidate channels vs 15,427 labeled ads (2016-2020)&quot;,
+    &quot;logistic regression + leave-one-out CV instead of neural net + 80/20 split&quot;,
+    &quot;transcripts from faster-whisper large-v3 (YouTube auto-captions only as fallback); ads without speech get a constant empty-string text embedding&quot;,
+    &quot;R ads = Trump 2024 channel, D ads = Harris/Biden 2024 channels (same era; sponsor = candidate)&quot;,
+    f&quot;{len(CONCEPTS)} concepts instead of 160; sparsity tuned to ~8 active concepts, not matched reconstruction&quot;,
+    &quot;empty transcript chunks dropped from the text mean&quot;,
+    &quot;360p frames; exposure curve uses prefix means with the full-length classifier (LOO)&quot;,
+]
+
+
+def run(cmd):
+    return subprocess.run(cmd, capture_output=True, text=True, check=True).stdout
+
+
+def extract_frames(vid, path):
+    d = os.path.join(OUT, &quot;frames&quot;, vid)
+    os.makedirs(d, exist_ok=True)
+    if not glob.glob(d + &quot;/*.jpg&quot;):
+        run([&quot;ffmpeg&quot;, &quot;-v&quot;, &quot;error&quot;, &quot;-y&quot;, &quot;-i&quot;, path, &quot;-vf&quot;, f&quot;fps=1/{STEP}&quot;, &quot;-q:v&quot;, &quot;3&quot;, d + &quot;/f%04d.jpg&quot;])
+    return sorted(glob.glob(d + &quot;/*.jpg&quot;))
+
+
+def extract_audio(vid, path):
+    d = os.path.join(OUT, &quot;audio&quot;)
+    os.makedirs(d, exist_ok=True)
+    wav = os.path.join(d, vid + &quot;.wav&quot;)
+    if not os.path.exists(wav):
+        run([&quot;ffmpeg&quot;, &quot;-v&quot;, &quot;error&quot;, &quot;-y&quot;, &quot;-i&quot;, path, &quot;-vn&quot;, &quot;-ac&quot;, &quot;1&quot;, &quot;-ar&quot;, &quot;16000&quot;, wav])
+    return wav
+
+
+TS = re.compile(r&quot;(\d+):(\d\d):(\d\d)\.(\d{3})&quot;)
+WORD_TAG = re.compile(r&quot;&lt;(\d+:\d\d:\d\d\.\d{3})&gt;&lt;c&gt;\s*([^&lt;]+?)\s*&lt;/c&gt;&quot;)
+
+
+def ts(s):
+    h, m, sec, ms = TS.match(s).groups()
+    return int(h) * 3600 + int(m) * 60 + int(sec) + int(ms) / 1000
+
+
+def parse_vtt(path):
+    &quot;&quot;&quot;List of (t, word). Uses YouTube word-level timing tags; falls back to cue level.&quot;&quot;&quot;
+    words, cues, cur = [], [], None
+    for line in open(path, encoding=&quot;utf-8&quot;, errors=&quot;ignore&quot;):
+        line = line.rstrip(&quot;\n&quot;)
+        if &quot;--&gt;&quot; in line:
+            a, b = line.split(&quot;--&gt;&quot;)[:2]
+            cur = (ts(a.strip()), ts(b.strip().split()[0]))
+            continue
+        if cur is None or not line.strip() or line.startswith((&quot;WEBVTT&quot;, &quot;Kind:&quot;, &quot;Language:&quot;)):
+            continue
+        if &quot;&lt;c&gt;&quot; in line:
+            head = re.sub(r&quot;&lt;[^&gt;]+&gt;&quot;, &quot;&quot;, re.split(r&quot;&lt;\d+:\d\d:\d\d\.\d{3}&gt;&quot;, line)[0]).strip()
+            if head:
+                words.append((cur[0], head))
+            words += [(ts(t), w) for t, w in WORD_TAG.findall(line)]
+        else:
+            txt = re.sub(r&quot;&lt;[^&gt;]+&gt;&quot;, &quot;&quot;, line).strip()
+            if txt:
+                cues.append((cur[0], cur[1], txt))
+    if words:
+        return sorted(set(words))
+    out, prev = [], None
+    for s, e, txt in cues:  # cue fallback: drop repeated lines, spread words over the cue
+        if txt == prev:
+            continue
+        prev, ws = txt, txt.split()
+        out += [(s + (e - s) * i / max(len(ws), 1), w) for i, w in enumerate(ws)]
+    return sorted(out)
+
+
+def chunks(words, n):
+    return [&quot; &quot;.join(w for t, w in words if k * STEP &lt;= t &lt; (k + 1) * STEP) for k in range(n)]
+
+
+_WHISPER = None
+
+
+def transcribe(wav):
+    &quot;&quot;&quot;Word-level transcript with faster-whisper large-v3 (closer to the paper&#x27;s transcripts).&quot;&quot;&quot;
+    global _WHISPER
+    from faster_whisper import WhisperModel
+    if _WHISPER is None:
+        cuda = torch.cuda.is_available()
+        _WHISPER = WhisperModel(&quot;large-v3&quot;, device=&quot;cuda&quot; if cuda else &quot;cpu&quot;,
+                                compute_type=&quot;float16&quot; if cuda else &quot;int8&quot;)
+    segs, _ = _WHISPER.transcribe(wav, language=&quot;en&quot;, word_timestamps=True, vad_filter=True)
+    return [(w.start, w.word.strip()) for s in segs for w in (s.words or []) if w.word.strip()]
+
+
+def load_clip():
+    dev = &quot;cuda&quot; if torch.cuda.is_available() else &quot;cpu&quot;
+    m = CLIPModel.from_pretrained(&quot;openai/clip-vit-base-patch32&quot;).to(dev).eval()
+    return m, CLIPProcessor.from_pretrained(&quot;openai/clip-vit-base-patch32&quot;), dev
+
+
+@torch.no_grad()
+def embed_images(m, p, dev, paths, bs=32):
+    out = []
+    for i in range(0, len(paths), bs):
+        ims = [Image.open(x).convert(&quot;RGB&quot;) for x in paths[i:i + bs]]
+        out.append(m.get_image_features(**p(images=ims, return_tensors=&quot;pt&quot;).to(dev)).float().cpu().numpy())
+    return np.concatenate(out)
+
+
+@torch.no_grad()
+def embed_texts(m, p, dev, texts, bs=64):
+    out = []
+    for i in range(0, len(texts), bs):
+        t = p(text=texts[i:i + bs], return_tensors=&quot;pt&quot;, padding=True, truncation=True, max_length=77).to(dev)
+        out.append(m.get_text_features(**t).float().cpu().numpy())
+    return np.concatenate(out)
+
+
+def unit(x):
+    return x / np.clip(np.linalg.norm(x, axis=-1, keepdims=True), 1e-8, None)
+
+
+def loo_proba(X, y, C=1.0):
+    &quot;&quot;&quot;Leave-one-out predicted P(R).&quot;&quot;&quot;
+    p = np.zeros(len(y))
+    for i in range(len(y)):
+        idx = np.arange(len(y)) != i
+        clf = LogisticRegression(C=C, max_iter=2000).fit(X[idx], y[idx])
+        p[i] = clf.predict_proba(X[i:i + 1])[0, 1]
+    return p
+
+
+def loo_proba_prefix(Xfull, Xprefix, y, C=1.0):
+    &quot;&quot;&quot;Train on full-length embeddings of the other ads, test on the prefix embedding of ad i.&quot;&quot;&quot;
+    p = np.zeros(len(y))
+    for i in range(len(y)):
+        idx = np.arange(len(y)) != i
+        clf = LogisticRegression(C=C, max_iter=2000).fit(Xfull[idx], y[idx])
+        p[i] = clf.predict_proba(Xprefix[i:i + 1])[0, 1]
+    return p
+
+
+def splice(Xc, C, n_active=8):
+    &quot;&quot;&quot;Non-negative sparse projection of centered embeddings onto a centered concept dictionary.&quot;&quot;&quot;
+    W = np.zeros((len(Xc), C.shape[1]))
+    for i, x in enumerate(Xc):
+        alpha = 0.01
+        for _ in range(14):
+            l = Lasso(alpha=alpha, positive=True, fit_intercept=False, max_iter=10000).fit(C, x)
+            k = int((l.coef_ &gt; 0).sum())
+            if k &gt; n_active * 1.5:
+                alpha *= 1.6
+            elif k &lt; n_active / 1.5:
+                alpha /= 1.6
+            else:
+                break
+        W[i] = l.coef_
+    return W
+
+
+def main():
+    rows = list(csv.DictReader(open(os.path.join(DATA, &quot;manifest.csv&quot;))))
+    ids = [r[&quot;id&quot;] for r in rows]
+    y = np.array([1 if r[&quot;label&quot;].strip().upper().startswith(&quot;R&quot;) else 0 for r in rows])
+    m, p, dev = load_clip()
+    print(f&quot;device={dev}  ads={len(rows)}  R={int(y.sum())} D={int((1 - y).sum())}&quot;)
+
+    img_ad, txt_ad, img_seq, txt_seq, n_words = [], [], {}, {}, []
+    for r in rows:
+        vid, vpath = r[&quot;id&quot;], os.path.join(DATA, r[&quot;video&quot;])
+        frames = extract_frames(vid, vpath)
+        wav = extract_audio(vid, vpath)
+        src = &quot;whisper&quot;
+        try:
+            words = transcribe(wav)
+        except Exception as e:  # fallback: YouTube captions if whisper is unavailable
+            src, subs = &quot;vtt&quot;, (r.get(&quot;subs&quot;) or &quot;&quot;).strip()
+            words = parse_vtt(os.path.join(DATA, subs)) if subs else []
+            print(f&quot;  whisper failed ({e!r}); using captions: {bool(subs)}&quot;)
+        ch = chunks(words, len(frames))
+        n_words.append(len(words))
+        fi = unit(embed_images(m, p, dev, frames))
+        keep = [k for k, c in enumerate(ch) if c.strip()]
+        texts = [ch[k] for k in keep] if keep else [&quot;&quot;]  # no speech: constant empty-string embedding
+        ti = unit(embed_texts(m, p, dev, texts))
+        keep = keep or [0]
+        img_seq[vid], txt_seq[vid] = fi, (ti, keep)
+        img_ad.append(fi.mean(0))
+        txt_ad.append(ti.mean(0))
+        print(f&quot;  {vid}: {len(frames)} frames, {len(words)} words ({src}), {len(keep)} chunks&quot;)
+    img_ad, txt_ad = unit(np.array(img_ad)), unit(np.array(txt_ad))
+
+    # modality gap fix (Sec. 2.2): unit sphere -&gt; subtract modality mean -&gt; renormalize
+    mu_img, mu_txt = img_ad.mean(0), txt_ad.mean(0)
+    Xi, Xt = unit(img_ad - mu_img), unit(txt_ad - mu_txt)
+    gap_before = float(np.linalg.norm(mu_img - mu_txt))
+    gap_after = float(np.linalg.norm(Xi.mean(0) - Xt.mean(0)))
+
+    # Sec. 2.3: per-modality classifier + stacked model (LOO)
+    pi, pt = loo_proba(Xi, y), loo_proba(Xt, y)
+    ps = loo_proba(np.c_[pi, pt], y, C=10.0)
+    auc = {k: float(roc_auc_score(y, v)) for k, v in [(&quot;image&quot;, pi), (&quot;text&quot;, pt), (&quot;stacked&quot;, ps)]}
+    corr_it = float(np.corrcoef(pi, pt)[0, 1])
+
+    # Sec. 3: exposure curve, prefix of k seconds
+    expo = {}
+    for k in EXPOSURES:
+        nk = max(1, int(round(k / STEP)))
+        Pi = unit(unit(np.array([img_seq[v][:nk].mean(0) for v in ids])) - mu_img)
+        Pt_raw = []
+        for v in ids:
+            ti, keep = txt_seq[v]
+            sel = [j for j, kk in enumerate(keep) if kk &lt; nk]
+            Pt_raw.append(ti[sel].mean(0) if sel else np.zeros(Xi.shape[1]))
+        Pt = unit(unit(np.array(Pt_raw)) - mu_txt)
+        expo[k] = {&quot;image&quot;: float(roc_auc_score(y, loo_proba_prefix(Xi, Pi, y))),
+                   &quot;text&quot;: float(roc_auc_score(y, loo_proba_prefix(Xt, Pt, y)))}
+
+    # Sec. 4.1: SpLICE-lite; concept words centered with the text mean (sigma operation)
+    Cw = unit(unit(embed_texts(m, p, dev, CONCEPTS)) - mu_txt).T  # (512, K)
+    Wi, Wt = splice(Xi, Cw), splice(Xt, Cw)
+    rec = {&quot;image&quot;: float(np.mean([np.dot(x, unit(Cw @ w)) for x, w in zip(Xi, Wi)])),
+           &quot;text&quot;: float(np.mean([np.dot(x, unit(Cw @ w)) for x, w in zip(Xt, Wt)]))}
+
+    def top_diff(W, k=8):
+        d = W[y == 1].mean(0) - W[y == 0].mean(0)
+        o = np.argsort(d)
+        return {&quot;R_minus_D&quot;: [(CONCEPTS[j], round(float(d[j]), 4)) for j in o[::-1][:k] if d[j] &gt; 0],
+                &quot;D_minus_R&quot;: [(CONCEPTS[j], round(float(-d[j]), 4)) for j in o[:k] if d[j] &lt; 0]}
+
+    res = {&quot;n&quot;: len(rows), &quot;n_R&quot;: int(y.sum()), &quot;auc_loo&quot;: auc, &quot;corr_image_text_pred&quot;: corr_it,
+           &quot;modality_gap_norm&quot;: {&quot;before&quot;: gap_before, &quot;after&quot;: gap_after},
+           &quot;exposure_auc&quot;: expo, &quot;splice_reconstruction_cos&quot;: rec,
+           &quot;concepts_image&quot;: top_diff(Wi), &quot;concepts_text&quot;: top_diff(Wt),
+           &quot;mean_active_concepts&quot;: {&quot;image&quot;: float((Wi &gt; 0).sum(1).mean()), &quot;text&quot;: float((Wt &gt; 0).sum(1).mean())},
+           &quot;deviations&quot;: DEVIATIONS}
+    os.makedirs(OUT, exist_ok=True)
+    json.dump(res, open(os.path.join(OUT, &quot;results.json&quot;), &quot;w&quot;), indent=2)
+    np.savez(os.path.join(OUT, &quot;embeddings.npz&quot;), ids=np.array(ids), y=y, img=img_ad, txt=txt_ad,
+             mu_img=mu_img, mu_txt=mu_txt, concepts=np.array(CONCEPTS), Cw=Cw, Wi=Wi, Wt=Wt)
+    print(json.dumps({k: v for k, v in res.items() if k != &quot;deviations&quot;}, indent=1))
+
+
+if __name__ == &quot;__main__&quot;:
+    main()
+</code></pre>
+    </div></div>
+  </details>
+  <details class="codeblk">
+    <summary>A.10 verify_independent.py: independent recomputation used in the review <span class="meta">141 lines, 6,764 bytes</span></summary>
+    <div class="dbody"><div>
+    <p class="note">Shapley by permutation enumeration, AUC by rank counting, explicit leave-one-out loops, and the donor-free conflict variant; reproduces every table above from the caches.</p>
+    <div class="codebar"><button type="button" class="copybtn" data-target="code-A-10">Copy</button></div>
+    <pre id="code-A-10"><code>#!/usr/bin/env python3
+&quot;&quot;&quot;Independent recomputation of every reported number from the caches (RTA Phase 4).
+Deliberately does NOT import poc_omni / poc_clip. Shapley by permutation enumeration
+(not by the weight formula), AUC by Mann-Whitney rank counting, prototypes by explicit loops.
+Also computes a leakage-free conflict variant (prototype without the two source ads).&quot;&quot;&quot;
+import csv, itertools, json, math, os, sys
+import numpy as np
+from sklearn.linear_model import LogisticRegression
+
+ROOT = sys.argv[1] if len(sys.argv) &gt; 1 else os.path.dirname(os.path.abspath(__file__))
+rows = list(csv.DictReader(open(os.path.join(ROOT, &quot;data&quot;, &quot;manifest.csv&quot;))))
+ids = [r[&quot;id&quot;] for r in rows]
+y = np.array([1 if r[&quot;label&quot;].upper().startswith(&quot;R&quot;) else 0 for r in rows])
+cache = json.load(open(os.path.join(ROOT, &quot;out&quot;, &quot;omni_emb.json&quot;)))
+CONDS = [&quot;V&quot;, &quot;P&quot;, &quot;T&quot;, &quot;VP&quot;, &quot;VT&quot;, &quot;PT&quot;, &quot;VPT&quot;, &quot;A&quot;, &quot;VA&quot;]
+
+
+def unit(x):
+    x = np.asarray(x, float)
+    return x / np.maximum(np.linalg.norm(x, axis=-1, keepdims=True), 1e-12)
+
+
+def auc(yv, s):  # Mann-Whitney with tie handling
+    pos, neg = s[yv == 1], s[yv == 0]
+    gt = (pos[:, None] &gt; neg[None, :]).sum() + 0.5 * (pos[:, None] == neg[None, :]).sum()
+    return gt / (len(pos) * len(neg))
+
+
+def loo_logistic(X, yv):
+    out = np.zeros(len(yv))
+    for i in range(len(yv)):
+        m = np.ones(len(yv), bool); m[i] = False
+        out[i] = LogisticRegression(C=1.0, max_iter=5000).fit(X[m], yv[m]).predict_proba(X[i:i + 1])[0, 1]
+    return out
+
+
+def loo_proto(E, yv):
+    out = np.zeros(len(yv))
+    for i in range(len(yv)):
+        m = np.ones(len(yv), bool); m[i] = False
+        p = E[m &amp; (yv == 1)].mean(0) - E[m &amp; (yv == 0)].mean(0)
+        out[i] = float(E[i] @ (p / np.linalg.norm(p)))
+    return out
+
+
+E = {c: unit([cache[f&quot;{v}:{c}&quot;] for v in ids]) for c in CONDS}
+AR = unit([cache[k] for k in sorted(cache) if k.startswith(&quot;anchor:R:&quot;)])
+AD = unit([cache[k] for k in sorted(cache) if k.startswith(&quot;anchor:D:&quot;)])
+
+scores, aucs = {&quot;anchor&quot;: {}, &quot;proto&quot;: {}}, {&quot;anchor&quot;: {}, &quot;proto&quot;: {}, &quot;logistic_loo&quot;: {}}
+for c in CONDS:
+    sa = (E[c] @ AR.T).mean(1) - (E[c] @ AD.T).mean(1)
+    sp = loo_proto(E[c], y)
+    scores[&quot;anchor&quot;][c], scores[&quot;proto&quot;][c] = sa, sp
+    aucs[&quot;anchor&quot;][c] = round(float(auc(y, sa)), 3)
+    aucs[&quot;proto&quot;][c] = round(float(auc(y, sp)), 3)
+    aucs[&quot;logistic_loo&quot;][c] = round(float(auc(y, loo_logistic(E[c], y))), 3)
+
+
+def z(x):
+    return (x - x.mean()) / (x.std() if x.std() &gt; 1e-12 else 1.0)
+
+
+def shapley_perm(v):  # v: dict of frozenset -&gt; array; enumerate 3! orders
+    players = [&quot;V&quot;, &quot;P&quot;, &quot;T&quot;]
+    phi = {p: np.zeros(len(y)) for p in players}
+    for order in itertools.permutations(players):
+        seen = set()
+        for p in order:
+            before = v[frozenset(seen)]; seen.add(p); after = v[frozenset(seen)]
+            phi[p] += (after - before) / 6.0
+    return phi
+
+
+shap = {}
+for kind in (&quot;anchor&quot;, &quot;proto&quot;):
+    v = {frozenset(): np.zeros(len(y))}
+    for c in [&quot;V&quot;, &quot;P&quot;, &quot;T&quot;, &quot;VP&quot;, &quot;VT&quot;, &quot;PT&quot;, &quot;VPT&quot;]:
+        v[frozenset(c)] = z(scores[kind][c])
+    phi = shapley_perm(v)
+    mag = {p: float(np.abs(phi[p]).mean()) for p in phi}
+    tot = sum(mag.values())
+    shap[kind] = {&quot;share&quot;: {p: round(mag[p] / tot, 3) for p in phi},
+                  &quot;auc_phi&quot;: {p: round(float(auc(y, phi[p])), 3) for p in phi},
+                  &quot;sum_identity_max_abs_err&quot;: float(np.abs(phi[&quot;V&quot;] + phi[&quot;P&quot;] + phi[&quot;T&quot;] - v[frozenset(&quot;VPT&quot;)]).max())}
+
+means = {c: E[c].mean(0) for c in CONDS}
+gap = {f&quot;{a}-{b}&quot;: round(float(np.linalg.norm(means[a] - means[b])), 3) for a, b in [(&quot;V&quot;, &quot;T&quot;), (&quot;P&quot;, &quot;T&quot;), (&quot;V&quot;, &quot;P&quot;), (&quot;A&quot;, &quot;P&quot;)]}
+
+# conflict test: full-sample prototype (as reported) and leakage-free (prototype without ads i and j)
+lab = dict(zip(ids, y))
+conflict = {}
+for name, cond in [(&quot;V_over_P&quot;, &quot;VP&quot;), (&quot;V_over_T&quot;, &quot;VT&quot;), (&quot;P_over_T&quot;, &quot;PT&quot;)]:
+    keys = [k for k in cache if k.startswith(f&quot;swap:{name}:&quot;)]
+    full = E[cond][y == 1].mean(0) - E[cond][y == 0].mean(0)
+    w_full, w_loo = [], []
+    for k in keys:
+        _, _, i, j = k.split(&quot;:&quot;)
+        e = unit(cache[k])
+        w_full.append(int((1 if e @ full &gt; 0 else 0) == lab[i]))
+        m = np.array([v not in (i, j) for v in ids])
+        p2 = E[cond][m &amp; (y == 1)].mean(0) - E[cond][m &amp; (y == 0)].mean(0)
+        w_loo.append(int((1 if e @ p2 &gt; 0 else 0) == lab[i]))
+    conflict[name] = {&quot;n&quot;: len(keys), &quot;first_wins_full_proto&quot;: sum(w_full), &quot;first_wins_proto_without_i_j&quot;: sum(w_loo)}
+
+# Part A from embeddings.npz
+z_ = np.load(os.path.join(ROOT, &quot;out&quot;, &quot;embeddings.npz&quot;), allow_pickle=True)
+img, txt, yA = unit(z_[&quot;img&quot;]), unit(z_[&quot;txt&quot;]), z_[&quot;y&quot;]
+mu_i, mu_t = img.mean(0), txt.mean(0)
+Xi, Xt = unit(img - mu_i), unit(txt - mu_t)
+pi, pt = loo_logistic(Xi, yA), loo_logistic(Xt, yA)
+partA = {&quot;gap_before&quot;: round(float(np.linalg.norm(mu_i - mu_t)), 3), &quot;gap_after&quot;: round(float(np.linalg.norm(Xi.mean(0) - Xt.mean(0))), 3),
+         &quot;angle_before_deg&quot;: round(2 * math.degrees(math.asin(min(1, np.linalg.norm(mu_i - mu_t) / 2))), 1),
+         &quot;auc_img&quot;: round(float(auc(yA, pi)), 3), &quot;auc_txt&quot;: round(float(auc(yA, pt)), 3),
+         &quot;corr_pred&quot;: round(float(np.corrcoef(pi, pt)[0, 1]), 3),
+         &quot;auc_stacked&quot;: round(float(auc(yA, loo_logistic(np.c_[pi, pt], yA))), 3)}
+
+out = {&quot;n&quot;: len(ids), &quot;n_R&quot;: int(y.sum()), &quot;auc&quot;: aucs, &quot;shapley&quot;: shap, &quot;gap&quot;: gap, &quot;conflict&quot;: conflict, &quot;partA&quot;: partA}
+print(json.dumps(out, indent=1))
+
+# diff against reported
+rb = json.load(open(os.path.join(ROOT, &quot;out&quot;, &quot;results_B.json&quot;)))
+ra = json.load(open(os.path.join(ROOT, &quot;out&quot;, &quot;results.json&quot;)))
+diffs = []
+for k in (&quot;anchor&quot;, &quot;proto&quot;, &quot;logistic_loo&quot;):
+    for c in CONDS:
+        d = abs(aucs[k][c] - rb[&quot;auc&quot;][k][c])
+        if d &gt; 0.006: diffs.append(f&quot;B auc {k} {c}: mine {aucs[k][c]} reported {rb[&#x27;auc&#x27;][k][c]:.3f}&quot;)
+for kind in (&quot;anchor&quot;, &quot;proto&quot;):
+    for p in &quot;VPT&quot;:
+        d = abs(shap[kind][&quot;share&quot;][p] - rb[&quot;shapley&quot;][kind][&quot;share_of_abs_contribution&quot;][p])
+        if d &gt; 0.006: diffs.append(f&quot;B share {kind} {p}: mine {shap[kind][&#x27;share&#x27;][p]} reported {rb[&#x27;shapley&#x27;][kind][&#x27;share_of_abs_contribution&#x27;][p]:.3f}&quot;)
+for k in gap:
+    if abs(gap[k] - rb[&quot;modality_gap_norm&quot;][k]) &gt; 0.006: diffs.append(f&quot;B gap {k}&quot;)
+for k in conflict:
+    if conflict[k][&quot;first_wins_full_proto&quot;] / conflict[k][&quot;n&quot;] != rb[&quot;conflict&quot;][k][&quot;first_source_wins&quot;]: diffs.append(f&quot;B conflict {k}&quot;)
+for k, mine in ((&quot;image&quot;, partA[&quot;auc_img&quot;]), (&quot;text&quot;, partA[&quot;auc_txt&quot;]), (&quot;stacked&quot;, partA[&quot;auc_stacked&quot;])):
+    if abs(mine - ra[&quot;auc_loo&quot;][k]) &gt; 0.006: diffs.append(f&quot;A auc {k}: mine {mine} reported {ra[&#x27;auc_loo&#x27;][k]:.3f}&quot;)
+if abs(partA[&quot;gap_before&quot;] - ra[&quot;modality_gap_norm&quot;][&quot;before&quot;]) &gt; 0.006 or abs(partA[&quot;gap_after&quot;] - ra[&quot;modality_gap_norm&quot;][&quot;after&quot;]) &gt; 0.006: diffs.append(&quot;A gap&quot;)
+print(&quot;DIFFS vs reported:&quot;, diffs or &quot;none (all within 0.006)&quot;)
+</code></pre>
+    </div></div>
+  </details>
+</section>
+</main>
+</div>
+</div>
+<footer class="wrap">Aleksander Rej, 25 September 2026. Version 2, revised the same day after two independent reviews (a model-based review with full recomputation from the caches, and an adversarial audit); version 1 is kept with the review corpus. The code and results that produced these numbers are embedded in appendix A.4&ndash;A.10; nothing here has been peer-reviewed.</footer>
+<script>
+(function(){
+  /* section awareness for the nav */
+  var links=[].slice.call(document.querySelectorAll('nav.toc a'));
+  var secs=links.map(function(a){return document.querySelector(a.getAttribute('href'));});
+  if('IntersectionObserver' in window){
+    var cur=null;
+    var io=new IntersectionObserver(function(es){
+      es.forEach(function(e){ if(e.isIntersecting){ cur=e.target.id; } });
+      links.forEach(function(a){ a.classList.toggle('current', a.getAttribute('href')==='#'+cur); });
+    },{rootMargin:'-20% 0px -70% 0px',threshold:0});
+    secs.forEach(function(s){ if(s) io.observe(s); });
+  }
+  /* column labels for the stacked table layout on narrow screens */
+  document.querySelectorAll('table.stack').forEach(function(t){
+    var heads=[].slice.call(t.querySelectorAll('thead th')).map(function(h){return h.textContent.trim();});
+    t.querySelectorAll('tbody tr').forEach(function(tr){ [].slice.call(tr.children).forEach(function(td,i){ if(heads[i]) td.setAttribute('data-label',heads[i]); }); });
+  });
+  /* zws NA-005: a way back to the section list from every section, shown where the list is not sticky */
+
+  /* copy buttons for the embedded files */
+  document.querySelectorAll('.copybtn').forEach(function(b){
+    b.addEventListener('click', function(){
+      var el=document.getElementById(b.getAttribute('data-target')); if(!el) return;
+      var done=function(){ b.textContent='Copied'; setTimeout(function(){ b.textContent='Copy'; },1500); };
+      if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(el.textContent).then(done, function(){ b.textContent='Select and copy manually'; }); }
+      else { b.textContent='Select and copy manually'; }
+    });
+  });
+  document.querySelectorAll('main section > h2').forEach(function(h){
+    var a=document.createElement('a'); a.className='kback'; a.href='#toc'; a.textContent='sections'; h.appendChild(a);
+    a.addEventListener('click', function(){ var d=document.querySelector('.tocd'); if(d) d.open=true; });
+  });
+  /* collapsible contents on narrow screens: closed by default, closes after a choice */
+  var tocd=document.querySelector('.tocd'), narrow=window.matchMedia('(max-width:1000px)');
+  function tocMode(){ if(!tocd) return; if(narrow.matches){ tocd.open=false; } else { tocd.open=true; } }
+  tocMode(); if(narrow.addEventListener){ narrow.addEventListener('change', tocMode); }
+  document.querySelectorAll('nav.toc a').forEach(function(a){ a.addEventListener('click', function(){ if(narrow.matches && tocd) tocd.open=false; }); });
+})();
+</script>
+</body>
+</html>

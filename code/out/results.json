@@ -1,0 +1,193 @@
+{
+  "n": 22,
+  "n_R": 10,
+  "auc_loo": {
+    "image": 0.6583333333333333,
+    "text": 0.675,
+    "stacked": 0.45833333333333337
+  },
+  "corr_image_text_pred": -0.03599137194567069,
+  "modality_gap_norm": {
+    "before": 1.1061378717422485,
+    "after": 0.10089539736509323
+  },
+  "exposure_auc": {
+    "3": {
+      "image": 0.625,
+      "text": 0.48333333333333334
+    },
+    "6": {
+      "image": 0.6416666666666667,
+      "text": 0.43333333333333335
+    },
+    "12": {
+      "image": 0.5833333333333334,
+      "text": 0.5249999999999999
+    },
+    "24": {
+      "image": 0.6666666666666667,
+      "text": 0.6000000000000001
+    },
+    "45": {
+      "image": 0.6166666666666667,
+      "text": 0.65
+    }
+  },
+  "splice_reconstruction_cos": {
+    "image": 0.13777777623425339,
+    "text": 0.25164191857094037
+  },
+  "concepts_image": {
+    "R_minus_D": [
+      [
+        "rally",
+        0.016
+      ],
+      [
+        "crowd",
+        0.0115
+      ],
+      [
+        "freedom",
+        0.0102
+      ],
+      [
+        "patriotism",
+        0.0073
+      ],
+      [
+        "economy",
+        0.0052
+      ],
+      [
+        "small business",
+        0.0048
+      ],
+      [
+        "city",
+        0.0035
+      ],
+      [
+        "safety",
+        0.0031
+      ]
+    ],
+    "D_minus_R": [
+      [
+        "healthcare",
+        0.0204
+      ],
+      [
+        "hospital",
+        0.0143
+      ],
+      [
+        "countryside",
+        0.0132
+      ],
+      [
+        "love",
+        0.0116
+      ],
+      [
+        "education",
+        0.0094
+      ],
+      [
+        "police",
+        0.0093
+      ],
+      [
+        "corruption",
+        0.0084
+      ],
+      [
+        "handshake",
+        0.0076
+      ]
+    ]
+  },
+  "concepts_text": {
+    "R_minus_D": [
+      [
+        "unity",
+        0.0423
+      ],
+      [
+        "strength",
+        0.0306
+      ],
+      [
+        "pride",
+        0.0207
+      ],
+      [
+        "freedom",
+        0.0186
+      ],
+      [
+        "patriotism",
+        0.0145
+      ],
+      [
+        "hope",
+        0.0121
+      ],
+      [
+        "disgust",
+        0.0096
+      ],
+      [
+        "china",
+        0.0086
+      ]
+    ],
+    "D_minus_R": [
+      [
+        "abortion",
+        0.0633
+      ],
+      [
+        "healthcare",
+        0.0303
+      ],
+      [
+        "military",
+        0.0235
+      ],
+      [
+        "hospital",
+        0.0137
+      ],
+      [
+        "police",
+        0.0091
+      ],
+      [
+        "love",
+        0.0069
+      ],
+      [
+        "taxes",
+        0.005
+      ],
+      [
+        "small business",
+        0.0047
+      ]
+    ]
+  },
+  "mean_active_concepts": {
+    "image": 4.818181818181818,
+    "text": 4.363636363636363
+  },
+  "deviations": [
+    "n ~ 20 ads from official candidate channels vs 15,427 labeled ads (2016-2020)",
+    "logistic regression + leave-one-out CV instead of neural net + 80/20 split",
+    "transcripts from faster-whisper large-v3 (YouTube auto-captions only as fallback); ads without speech get a constant empty-string text embedding",
+    "R ads = Trump 2024 channel, D ads = Harris/Biden 2024 channels (same era; sponsor = candidate)",
+    "50 concepts instead of 160; sparsity tuned to ~8 active concepts, not matched reconstruction",
+    "empty transcript chunks dropped from the text mean",
+    "360p frames; exposure curve uses prefix means with the full-length classifier (LOO)"
+  ]
+}

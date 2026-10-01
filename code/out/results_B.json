@@ -1,0 +1,130 @@
+{
+  "n": 22,
+  "n_R": 10,
+  "model": "nvidia/omni-embed-nemotron-3b",
+  "conditions": [
+    "V",
+    "P",
+    "T",
+    "VP",
+    "VT",
+    "PT",
+    "VPT",
+    "A",
+    "VA"
+  ],
+  "auc": {
+    "anchor": {
+      "V": 0.7333333333333334,
+      "P": 0.7083333333333334,
+      "T": 0.7166666666666667,
+      "VP": 0.7083333333333334,
+      "VT": 0.7000000000000001,
+      "PT": 0.6833333333333333,
+      "VPT": 0.7000000000000001,
+      "A": 0.6833333333333333,
+      "VA": 0.7083333333333334
+    },
+    "proto": {
+      "V": 0.9916666666666666,
+      "P": 0.925,
+      "T": 0.9,
+      "VP": 1.0,
+      "VT": 1.0,
+      "PT": 0.9333333333333333,
+      "VPT": 1.0,
+      "A": 0.9333333333333333,
+      "VA": 1.0
+    },
+    "logistic_loo": {
+      "V": 0.8666666666666667,
+      "P": 0.6583333333333333,
+      "T": 0.6666666666666666,
+      "VP": 0.875,
+      "VT": 0.8833333333333333,
+      "PT": 0.6833333333333333,
+      "VPT": 0.8916666666666667,
+      "A": 0.6666666666666667,
+      "VA": 0.8833333333333333
+    }
+  },
+  "shapley": {
+    "anchor": {
+      "share_of_abs_contribution": {
+        "V": 0.43950197982550526,
+        "P": 0.28727144827087037,
+        "T": 0.2732265719036245
+      },
+      "auc_phi_vs_party": {
+        "V": 0.6416666666666667,
+        "P": 0.6583333333333333,
+        "T": 0.65
+      },
+      "mean_phi_R": {
+        "V": 0.22372619570443955,
+        "P": 0.1346453250517173,
+        "T": 0.12558190957428933
+      },
+      "mean_phi_D": {
+        "V": -0.18643849642036636,
+        "P": -0.11220443754309778,
+        "T": -0.10465159131190775
+      },
+      "interaction_mean_abs": 1.4482014802552137,
+      "interaction_auc_vs_party": 0.225
+    },
+    "proto": {
+      "share_of_abs_contribution": {
+        "V": 0.4303629029066916,
+        "P": 0.281699801919223,
+        "T": 0.2879372951740854
+      },
+      "auc_phi_vs_party": {
+        "V": 0.8916666666666666,
+        "P": 0.8833333333333333,
+        "T": 0.8916666666666666
+      },
+      "mean_phi_R": {
+        "V": 0.40300823654795603,
+        "P": 0.2634130708279729,
+        "T": 0.26755596957051475
+      },
+      "mean_phi_D": {
+        "V": -0.33584019712329655,
+        "P": -0.21951089235664403,
+        "T": -0.22296330797542918
+      },
+      "interaction_mean_abs": 1.5687250533688901,
+      "interaction_auc_vs_party": 0.06666666666666668
+    }
+  },
+  "modality_gap_norm": {
+    "V-T": 0.7019284910535292,
+    "P-T": 0.3923650901683346,
+    "V-P": 0.6191675156701028,
+    "A-P": 0.17019467786109443
+  },
+  "conflict": {
+    "V_over_P": {
+      "first_source_wins": 1.0,
+      "n_pairs": 20
+    },
+    "V_over_T": {
+      "first_source_wins": 1.0,
+      "n_pairs": 20
+    },
+    "P_over_T": {
+      "first_source_wins": 0.55,
+      "n_pairs": 20
+    }
+  },
+  "runtime_s": 212,
+  "deviations": [
+    "n = 22 ads (10 R / 12 D) from official 2024 candidate channels; heuristic, not inferential",
+    "prosody channel = low-pass 400 Hz + loudnorm (words unintelligible; pitch, rhythm, energy kept); music bass survives",
+    "video sampled at 1 fps, max 64 frames, low resolution (max_pixels 64*28*28) to fit 16 GB",
+    "every condition carries the constant prefix 'passage: ' so that conditions differ only by channel content",
+    "LOO prototype score has the usual leave-one-out mean bias (uniform across ads); anchors are hand-written",
+    "AUCs on 22 ads have SE ~ 0.12; Shapley shares are descriptive"
+  ]
+}
